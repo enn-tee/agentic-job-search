@@ -1,3 +1,6 @@
+# base_resumes
+resume_pool/
+
 # Python
 __pycache__/
 *.py[cod]
