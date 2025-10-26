@@ -229,13 +229,22 @@ def cli(ctx):
 )
 def tailor(job_file, company, title, base_resume, industry, output):
     """Tailor a resume for a specific job posting."""
+    from src.utils.artifact_cache import ArtifactCache
+    from src.models.job_posting import JobAnalysis
+
     click.echo(f"🎯 Agentic Resume Tailoring System")
     click.echo(f"Industry: {industry}")
     click.echo(f"Job: {title} at {company}\n")
 
+    # Initialize artifact cache
+    cache = ArtifactCache()
+
     # Load job description
     with open(job_file, "r") as f:
         description = f.read()
+
+    # Get job hash for caching
+    job_hash = cache.get_job_hash(description)
 
     # Create job posting
     job_posting = JobPosting(
@@ -254,16 +263,21 @@ def tailor(job_file, company, title, base_resume, industry, output):
         click.echo(f"Error loading industry config: {e}")
         return
 
-    # Initialize agents
-    click.echo("🤖 Initializing agents...")
-    job_analyzer = JobAnalyzerAgent(industry_adapter=adapter)
-    resume_matcher = ResumeMatcherAgent()
-    tailoring_orchestrator = TailoringOrchestratorAgent(industry_adapter=adapter)
-    quality_reviewer = QualityReviewerAgent(industry_adapter=adapter)
+    # Step 1: Analyze job posting (with caching)
+    click.echo("📋 Analyzing job posting...")
+    cached_analysis = cache.load_job_analysis(description)
 
-    # Step 1: Analyze job posting
-    click.echo("\n📋 Analyzing job posting...")
-    job_analysis = job_analyzer.run(job_posting)
+    if cached_analysis:
+        click.echo("   💾 Using cached job analysis")
+        job_analysis = JobAnalysis.from_dict(cached_analysis)
+    else:
+        click.echo("   🔍 Running job analysis (will be cached)...")
+        job_analyzer = JobAnalyzerAgent(industry_adapter=adapter)
+        job_analysis = job_analyzer.run(job_posting)
+        # Save to cache
+        cache.save_job_analysis(description, job_analysis.to_dict())
+        click.echo("   ✅ Job analysis cached for future runs")
+
     click.echo(f"   Role: {job_analysis.role_type} ({job_analysis.seniority})")
     click.echo(f"   Required skills: {', '.join(job_analysis.required_skills[:5])}...")
 
@@ -300,13 +314,42 @@ def tailor(job_file, company, title, base_resume, industry, output):
         best_resume, best_metadata, score = matches[0]
         click.echo(f"   Best match: {best_metadata.resume_id} (score: {score:.2f})")
 
-    # Step 4: Tailor the resume
+    # Step 4: Tailor the resume (with caching)
     click.echo("\n✍️  Tailoring resume...")
-    tailored_resume, diff = tailoring_orchestrator.run(job_analysis, best_resume)
+    cached_tailored = cache.load_tailored_resume(job_hash, best_metadata.resume_id)
 
-    # Step 5: Quality review
+    if cached_tailored:
+        click.echo("   💾 Using cached tailored resume")
+        tailored_resume = Resume.from_dict(cached_tailored["resume_data"])
+        # diff info is also in cache but we'll regenerate for display
+        diff = None  # Could reconstruct from cached_tailored["diff"]
+    else:
+        click.echo("   ✍️  Running resume tailoring (will be cached)...")
+        tailoring_orchestrator = TailoringOrchestratorAgent(industry_adapter=adapter)
+        tailored_resume, diff = tailoring_orchestrator.run(job_analysis, best_resume)
+        # Save to cache
+        cache.save_tailored_resume(
+            job_hash,
+            best_metadata.resume_id,
+            tailored_resume.to_dict(),
+            diff.to_dict() if diff else {},
+        )
+        click.echo("   ✅ Tailored resume cached for future runs")
+
+    # Step 5: Quality review (with caching)
     click.echo("\n🔍 Reviewing tailored resume...")
-    review = quality_reviewer.run(job_analysis, tailored_resume)
+    cached_review = cache.load_quality_review(job_hash, best_metadata.resume_id)
+
+    if cached_review:
+        click.echo("   💾 Using cached quality review")
+        review = cached_review
+    else:
+        click.echo("   🔍 Running quality review (will be cached)...")
+        quality_reviewer = QualityReviewerAgent(industry_adapter=adapter)
+        review = quality_reviewer.run(job_analysis, tailored_resume)
+        # Save to cache
+        cache.save_quality_review(job_hash, best_metadata.resume_id, review)
+        click.echo("   ✅ Quality review cached for future runs")
     click.echo(f"   Overall score: {review.get('overall_score', 'N/A')}/10")
     click.echo(
         f"   Interview likelihood: {review.get('interview_likelihood', 'N/A')}"
@@ -453,6 +496,53 @@ def info(industry):
 
     except Exception as e:
         click.echo(f"Error: {e}")
+
+
+@cli.command()
+@click.option(
+    "--list",
+    "list_cache",
+    is_flag=True,
+    help="List cached artifacts",
+)
+@click.option(
+    "--clear",
+    "clear_cache",
+    is_flag=True,
+    help="Clear all cached artifacts",
+)
+@click.option(
+    "--stage",
+    help="Specific stage to clear (job_analysis, tailored_resume, quality_review)",
+)
+def cache(list_cache, clear_cache, stage):
+    """Manage artifact cache."""
+    from src.utils.artifact_cache import ArtifactCache
+
+    artifact_cache = ArtifactCache()
+
+    if list_cache:
+        counts = artifact_cache.list_cached_artifacts()
+        click.echo("\n📦 Cached Artifacts:\n")
+        click.echo(f"   Job Analyses:      {counts['job_analysis']}")
+        click.echo(f"   Resume Matches:    {counts['resume_matches']}")
+        click.echo(f"   Tailored Resumes:  {counts['tailored_resume']}")
+        click.echo(f"   Quality Reviews:   {counts['quality_review']}")
+        total = sum(counts.values())
+        click.echo(f"\n   Total: {total} artifacts\n")
+
+    elif clear_cache:
+        if stage:
+            deleted = artifact_cache.clear_cache(stage)
+            click.echo(f"✅ Cleared {deleted} {stage} artifact(s)")
+        else:
+            if click.confirm("Clear ALL cached artifacts?"):
+                deleted = artifact_cache.clear_cache()
+                click.echo(f"✅ Cleared {deleted} artifact(s)")
+    else:
+        # Show help
+        click.echo("Use --list to view cached artifacts")
+        click.echo("Use --clear to delete cached artifacts")
 
 
 if __name__ == "__main__":

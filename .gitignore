@@ -63,6 +63,9 @@ resume_pool/job_postings/*.json
 current_job.txt
 .last_job_cache.json
 
+# Artifact cache
+.cache/
+
 # Logs
 *.log
 logs/
