@@ -62,15 +62,38 @@ cp .env.example .env
 
 ### Basic Usage
 
+**Interactive Mode (Recommended):**
 ```bash
-# Tailor resume for a job posting
-python main.py --job-url "https://example.com/job-posting"
+# Simply run without arguments for an interactive experience
+python main.py
+
+# You'll be prompted for:
+# - What to do (tailor, info, exit)
+# - Company name and job title
+# - Industry (defaults to healthcare)
+```
+
+**Command-Line Mode:**
+```bash
+# Tailor resume using current_job.txt
+python main.py tailor \
+  --job current_job.txt \
+  --company "Synergie Systems" \
+  --title "Healthcare Data Analyst"
 
 # Use a specific base resume
-python main.py --job-url "..." --base-resume "healthcare_analyst_base"
+python main.py tailor \
+  --job current_job.txt \
+  --company "Company" \
+  --title "Title" \
+  --base-resume "my_resume_id"
 
-# Specify industry
-python main.py --job-url "..." --industry healthcare
+# Specify different industry
+python main.py tailor \
+  --job current_job.txt \
+  --company "TechCorp" \
+  --title "Software Engineer" \
+  --industry tech
 ```
 
 ## 🏗️ Architecture

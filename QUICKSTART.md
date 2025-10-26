@@ -39,25 +39,97 @@ cp .env.example .env
 
 ## Usage
 
-### View Industry Information
+### Interactive Mode (Easiest!)
 
-See what the system knows about an industry:
+Simply run the CLI without any arguments for an interactive experience:
+
+```bash
+python main.py
+```
+
+You'll be prompted to:
+1. Choose what you want to do (tailor, info, exit)
+2. If tailoring:
+   - Confirm use of `current_job.txt` (if it has content)
+   - Enter company name
+   - Enter job title
+   - Confirm or change industry (defaults to healthcare)
+
+**Example Interactive Session (First Time):**
+```
+🎯 Agentic Resume Tailoring System
+
+What would you like to do? [tailor/info/exit] (tailor): tailor
+
+📋 Let's tailor your resume!
+
+Found job description in current_job.txt
+
+Preview:
+About the job
+Job Title: Entry-Level Healthcare Data Analyst (Remote)
+...
+
+Use this job description? [Y/n]: y
+Company name: Synergie Systems
+Job title: Entry-Level Healthcare Data Analyst
+Industry [healthcare]:
+Use a specific base resume? [y/N]: n
+
+============================================================
+Starting resume tailoring...
+============================================================
+```
+
+**Example Interactive Session (Repeat Run - Faster!):**
+```
+🎯 Agentic Resume Tailoring System
+
+What would you like to do? [tailor/info/exit] (tailor): tailor
+
+📋 Let's tailor your resume!
+
+💾 Last job: Entry-Level Healthcare Data Analyst at Synergie Systems
+Use these details again? [Y/n]: y
+✅ Using cached job details
+
+============================================================
+Starting resume tailoring...
+============================================================
+```
+
+**Note:** The system remembers your last job details, so re-running for the same position is instant!
+
+### Command-Line Mode (Advanced)
+
+You can also use direct commands for automation/scripting:
+
+#### View Industry Information
 
 ```bash
 python main.py info --industry healthcare
 ```
 
-### Tailor a Resume
+#### Tailor a Resume
 
-#### Example: Using the sample job posting
+##### Recommended Workflow: Using `current_job.txt`
+
+The easiest way to tailor resumes is to use the `current_job.txt` file:
+
+1. **Paste job description** into `current_job.txt` (this file is git-ignored)
+2. **Run the tailor command:**
 
 ```bash
 python main.py tailor \
-  --job-text examples/sample_job_posting.txt \
+  --job current_job.txt \
   --company "MedTech Solutions" \
-  --title "Senior Healthcare Data Analyst" \
-  --industry healthcare
+  --title "Senior Healthcare Data Analyst"
 ```
+
+**Note:**
+- The `--industry` flag is optional and defaults to `healthcare` (from `.env`)
+- You can use `--job` or `--job-text` (both work the same)
+- The `current_job.txt` file won't be tracked by git, so you can reuse it for each new job
 
 This will:
 1. ✅ Analyze the job posting
@@ -66,20 +138,33 @@ This will:
 4. ✅ Review the tailored resume
 5. ✅ Save the result to `resume_pool/tailored_resumes/`
 
-#### Using your own resume
+#### Example: Using the sample job posting
 
-1. Create a JSON file in `resume_pool/base_resumes/` following the format in `example_resume.json`
-2. Run the tailor command as shown above
+```bash
+python main.py tailor \
+  --job examples/sample_job_posting.txt \
+  --company "MedTech Solutions" \
+  --title "Senior Healthcare Data Analyst"
+```
 
 #### Using a specific base resume
 
 ```bash
 python main.py tailor \
-  --job-text path/to/job.txt \
+  --job current_job.txt \
   --company "Company Name" \
   --title "Job Title" \
-  --base-resume your_resume_id \
-  --industry healthcare
+  --base-resume your_resume_id
+```
+
+#### Specifying a different industry
+
+```bash
+python main.py tailor \
+  --job current_job.txt \
+  --company "TechCorp" \
+  --title "Software Engineer" \
+  --industry tech
 ```
 
 ### Output
@@ -97,7 +182,22 @@ The output includes:
 
 ## Creating Your Base Resume
 
-### Option 1: Use the template
+### Option 1: Use a PDF (Easiest!)
+
+Simply copy your existing resume PDF into `resume_pool/base_resumes/`:
+
+```bash
+cp ~/Documents/my_resume.pdf resume_pool/base_resumes/
+```
+
+The system will automatically:
+- Extract text from the PDF
+- Use Claude to parse it into structured format
+- Load it into the resume pool
+
+**Supported:** Any standard resume PDF with readable text.
+
+### Option 2: Use the JSON template
 
 Copy and modify `resume_pool/base_resumes/example_resume.json`:
 
@@ -107,7 +207,7 @@ cp resume_pool/base_resumes/example_resume.json resume_pool/base_resumes/my_resu
 
 Then edit `my_resume.json` with your information.
 
-### Option 2: Start from scratch
+### Option 3: Start from scratch
 
 Create a new JSON file with this structure:
 

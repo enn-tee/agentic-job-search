@@ -50,6 +50,7 @@ htmlcov/
 
 # Resume pool (sensitive data)
 resume_pool/base_resumes/*.json
+resume_pool/base_resumes/*.pdf
 resume_pool/tailored_resumes/*.json
 resume_pool/metadata/*.json
 resume_pool/job_postings/*.json
@@ -57,6 +58,10 @@ resume_pool/job_postings/*.json
 # Keep example files
 !resume_pool/**/.gitkeep
 !resume_pool/**/example_*.json
+
+# Current job description (user's working file)
+current_job.txt
+.last_job_cache.json
 
 # Logs
 *.log
