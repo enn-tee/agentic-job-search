@@ -1,5 +1,7 @@
 # base_resumes
 resume_pool/
+internal_notes.txt
+.claude/
 
 # Python
 __pycache__/
@@ -55,6 +57,7 @@ resume_pool/tailored_resumes/*.json
 resume_pool/metadata/*.json
 resume_pool/job_postings/*.json
 resume_pool/reports/*.html
+resume_pool/exports/*
 
 # Keep example files
 !resume_pool/**/.gitkeep

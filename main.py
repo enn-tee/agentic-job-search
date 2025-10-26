@@ -115,7 +115,7 @@ def interactive_mode():
     # Ask what the user wants to do
     action = click.prompt(
         "What would you like to do?",
-        type=click.Choice(["tailor", "info", "exit"], case_sensitive=False),
+        type=click.Choice(["tailor", "review", "info", "exit"], case_sensitive=False),
         default="tailor",
     )
 
@@ -133,6 +133,12 @@ def interactive_mode():
         # Call the info command
         ctx = click.Context(info)
         ctx.invoke(info, industry=industry)
+        return
+
+    if action == "review":
+        # Call the review command
+        ctx = click.Context(review)
+        ctx.invoke(review)
         return
 
     if action == "tailor":
@@ -346,7 +352,9 @@ def tailor(job_file, company, title, base_resume, industry, output):
 
     # Step 3.5: Interactive Skills Discovery (optional)
     click.echo("\n🔍 Analyzing skill gaps...")
-    enhanced_resume = run_skills_discovery(job_analysis, best_resume, adapter)
+    enhanced_resume, discovered_bullets, discovered_skills = run_skills_discovery(
+        job_analysis, best_resume, adapter, job_hash, cache
+    )
     if enhanced_resume:
         best_resume = enhanced_resume
         click.echo("   ✅ Resume enhanced with discovered skills")
@@ -355,21 +363,82 @@ def tailor(job_file, company, title, base_resume, industry, output):
     click.echo("\n✍️  Tailoring resume...")
     cached_tailored = cache.load_tailored_resume(job_hash, best_metadata.resume_id)
 
+    # Store the original resume for diff display
+    original_resume_for_diff = best_resume
+
     if cached_tailored:
         click.echo("   💾 Using cached tailored resume")
         tailored_resume = Resume.from_dict(cached_tailored["resume_data"])
-        # diff info is also in cache but we'll regenerate for display
-        diff = None  # Could reconstruct from cached_tailored["diff"]
+
+        # Reconstruct original resume from cache if available
+        if cached_tailored.get("original_resume_data"):
+            original_resume_for_diff = Resume.from_dict(cached_tailored["original_resume_data"])
+
+        # Reconstruct diff from cache
+        if cached_tailored.get("diff"):
+            from src.models.resume import ResumeDiff
+            diff_data = cached_tailored["diff"]
+            diff = ResumeDiff(
+                original_resume_id=diff_data.get("original_resume_id", ""),
+                tailored_resume_id=diff_data.get("tailored_resume_id", ""),
+                summary_changed=diff_data.get("summary_changed", False),
+                original_summary=diff_data.get("original_summary", ""),
+                new_summary=diff_data.get("new_summary", ""),
+                bullets_modified=diff_data.get("bullets_modified", []),
+                skills_added=diff_data.get("skills_added", []),
+                skills_removed=diff_data.get("skills_removed", []),
+                skills_reordered=diff_data.get("skills_reordered", False),
+                keywords_integrated=diff_data.get("keywords_integrated", []),
+                sections_reordered=diff_data.get("sections_reordered", False),
+                sections_added=diff_data.get("sections_added", []),
+                sections_removed=diff_data.get("sections_removed", []),
+            )
+
+            # Add skills discovery changes to diff if they exist
+            if discovered_bullets or discovered_skills:
+                # Add discovered skills
+                if discovered_skills:
+                    diff.skills_added.extend([s for s in discovered_skills if s not in diff.skills_added])
+
+                # Add discovered bullets
+                if discovered_bullets:
+                    for bullet in discovered_bullets:
+                        diff.bullets_modified.append({
+                            "position_index": 0,
+                            "bullet_index": -1,
+                            "original": "",
+                            "new": bullet
+                        })
+        else:
+            diff = None
     else:
         click.echo("   ✍️  Running resume tailoring (will be cached)...")
         tailoring_orchestrator = TailoringOrchestratorAgent(industry_adapter=adapter)
         tailored_resume, diff = tailoring_orchestrator.run(job_analysis, best_resume)
-        # Save to cache
+
+        # Add skills discovery changes to diff
+        if diff and (discovered_bullets or discovered_skills):
+            # Add discovered skills to skills_added
+            if discovered_skills:
+                diff.skills_added.extend([s for s in discovered_skills if s not in diff.skills_added])
+
+            # Mark discovered bullets as modified (they were added by skills discovery)
+            if discovered_bullets:
+                for bullet in discovered_bullets:
+                    diff.bullets_modified.append({
+                        "position_index": 0,
+                        "bullet_index": -1,  # New bullet
+                        "original": "",  # No original
+                        "new": bullet
+                    })
+
+        # Save to cache (including original resume for diff regeneration)
         cache.save_tailored_resume(
             job_hash,
             best_metadata.resume_id,
             tailored_resume.to_dict(),
             diff.to_dict() if diff else {},
+            best_resume.to_dict(),  # Save original for diff display
         )
         click.echo("   ✅ Tailored resume cached for future runs")
 
@@ -413,12 +482,12 @@ def tailor(job_file, company, title, base_resume, industry, output):
         click.echo("📊 RESUME CHANGES")
         click.echo("=" * 120)
 
-        cli_diff = diff_viewer.generate_cli_diff(best_resume, tailored_resume, diff)
+        cli_diff = diff_viewer.generate_cli_diff(original_resume_for_diff, tailored_resume, diff)
         click.echo(cli_diff)
 
         # Generate change summary
         summary = diff_viewer.generate_diff_summary(
-            best_resume, tailored_resume, diff, job_analysis
+            original_resume_for_diff, tailored_resume, diff, job_analysis
         )
 
         click.echo("\n💡 WHY THESE CHANGES MATTER:")
@@ -436,7 +505,7 @@ def tailor(job_file, company, title, base_resume, industry, output):
             html_path.parent.mkdir(parents=True, exist_ok=True)
 
             html_file = diff_viewer.generate_html_diff(
-                best_resume, tailored_resume, diff, job_analysis, html_path
+                original_resume_for_diff, tailored_resume, diff, job_analysis, html_path
             )
             click.echo(f"   ✅ HTML report saved to: {html_file}")
 
@@ -445,6 +514,44 @@ def tailor(job_file, company, title, base_resume, industry, output):
                 import webbrowser
 
                 webbrowser.open(f"file://{Path(html_file).absolute()}")
+
+    # Step 5.6: Export tailored resume
+    click.echo("\n📄 EXPORT TAILORED RESUME")
+    click.echo("=" * 80)
+    click.echo("Choose export format(s):")
+
+    from src.utils.resume_exporter import ResumeExporter
+    exporter = ResumeExporter()
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_company = company.replace(" ", "_").lower()
+    exports_dir = Path("resume_pool/exports")
+    exports_dir.mkdir(parents=True, exist_ok=True)
+
+    exported_files = []
+
+    # Printable HTML Resume
+    if click.confirm("   📋 Export as printable HTML resume?", default=True):
+        html_resume_path = exports_dir / f"{timestamp}_{safe_company}_resume.html"
+        html_file = exporter.export_to_html(tailored_resume, html_resume_path)
+        exported_files.append(("HTML Resume", html_file))
+        click.echo(f"      ✅ Saved to: {html_file}")
+
+        if click.confirm("      Open in browser to print/save as PDF?", default=True):
+            import webbrowser
+            webbrowser.open(f"file://{Path(html_file).absolute()}")
+
+    # Plain text format
+    if click.confirm("   📝 Export as formatted text?", default=True):
+        text_path = exports_dir / f"{timestamp}_{safe_company}_resume.txt"
+        text_file = exporter.export_to_text(tailored_resume, text_path)
+        exported_files.append(("Text Resume", text_file))
+        click.echo(f"      ✅ Saved to: {text_file}")
+
+    if exported_files:
+        click.echo(f"\n   ✅ Exported {len(exported_files)} format(s)")
+        click.echo("   💡 HTML version can be printed to PDF or copied to Google Docs")
+        click.echo("   💡 Text version can be copied to any application")
 
     # Step 6: Save tailored resume
     if not output:
@@ -486,14 +593,46 @@ def tailor(job_file, company, title, base_resume, industry, output):
 
 
 def run_skills_discovery(
-    job_analysis: JobAnalysis, resume: Resume, industry_adapter
-) -> Resume:
+    job_analysis: JobAnalysis, resume: Resume, industry_adapter, job_hash: str, cache
+) -> tuple:
     """
     Run interactive skills discovery to fill gaps and find transferable skills.
 
     Returns:
-        Enhanced resume with newly discovered skills/experience, or None if skipped
+        Tuple of (enhanced_resume, discovered_bullets, discovered_skills) or (None, [], [])
     """
+    # Check cache first
+    cached_discovery = cache.load_skills_discovery(job_hash, resume.to_dict().get('email', 'unknown'))
+
+    if cached_discovery:
+        click.echo("   💾 Using cached skills discovery")
+
+        discovered_bullets = cached_discovery.get('discovered_bullets', [])
+        skills_to_add = cached_discovery.get('discovered_skills', [])
+
+        if not discovered_bullets and not skills_to_add:
+            return None, [], []
+
+        # Apply cached discoveries
+        enhanced_resume = Resume.from_dict(resume.to_dict())
+
+        # Add skills
+        for skill in skills_to_add:
+            if skill not in enhanced_resume.technical_skills:
+                enhanced_resume.technical_skills.append(skill)
+
+        # Add bullets
+        if discovered_bullets and enhanced_resume.experience:
+            recent_exp = enhanced_resume.experience[0]
+            if isinstance(recent_exp, dict):
+                bullets = recent_exp.get('bullets', [])
+                bullets.extend(discovered_bullets)
+                recent_exp['bullets'] = bullets
+            else:
+                recent_exp.bullets.extend(discovered_bullets)
+
+        return enhanced_resume, discovered_bullets, skills_to_add
+
     # Initialize discovery agent
     discovery_agent = SkillsDiscoveryAgent()
 
@@ -502,7 +641,7 @@ def run_skills_discovery(
 
     if not gaps["missing_required"] and not gaps["missing_preferred"]:
         click.echo("   ✅ No significant skill gaps found!")
-        return None
+        return None, [], []
 
     # Show gap summary
     click.echo(f"   Found {len(gaps['missing_required'])} missing required skills")
@@ -518,7 +657,7 @@ def run_skills_discovery(
     )
 
     if not click.confirm("   Start skills discovery?", default=True):
-        return None
+        return None, [], []
 
     # Track discovered skills and experiences
     discovered_bullets = []
@@ -619,7 +758,9 @@ def run_skills_discovery(
     # Apply discoveries to resume
     if not discovered_bullets and not skills_to_add:
         click.echo("\n   No new skills or experiences discovered")
-        return None
+        # Cache empty result
+        cache.save_skills_discovery(job_hash, resume.to_dict().get('email', 'unknown'), [], [])
+        return None, [], []
 
     click.echo(f"\n{'='*60}")
     click.echo("📊 Discovery Summary")
@@ -650,7 +791,15 @@ def run_skills_discovery(
         else:
             recent_exp.bullets.extend(discovered_bullets)
 
-    return enhanced_resume
+    # Cache the discoveries
+    cache.save_skills_discovery(
+        job_hash,
+        resume.to_dict().get('email', 'unknown'),
+        discovered_bullets,
+        skills_to_add
+    )
+
+    return enhanced_resume, discovered_bullets, skills_to_add
 
 
 def load_resume_pool(resume_dir: Path) -> list:
@@ -728,6 +877,243 @@ def load_resume_pool(resume_dir: Path) -> list:
             click.echo(f"   ⚠️  Warning: Could not parse PDF {resume_file}: {e}")
 
     return pool
+
+
+@cli.command()
+def review():
+    """Review and compare existing tailored resumes."""
+    click.echo("\n📚 REVIEW TAILORED RESUMES")
+    click.echo("=" * 80)
+
+    # Find all tailored resumes
+    tailored_dir = Path("resume_pool/tailored_resumes")
+    metadata_dir = Path("resume_pool/metadata")
+
+    if not tailored_dir.exists():
+        click.echo("   ⚠️  No tailored resumes found")
+        return
+
+    # Load all metadata files
+    resumes = []
+    for meta_file in metadata_dir.glob("*.json"):
+        try:
+            with open(meta_file, 'r') as f:
+                meta = json.load(f)
+                resumes.append(meta)
+        except Exception as e:
+            click.echo(f"   ⚠️  Could not load {meta_file.name}: {e}")
+
+    if not resumes:
+        click.echo("   ⚠️  No resume metadata found")
+        return
+
+    # Sort by creation date (newest first)
+    resumes.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+    click.echo(f"\n   Found {len(resumes)} tailored resume(s):\n")
+
+    # Display list
+    for i, meta in enumerate(resumes, 1):
+        created = meta.get('created_at', 'Unknown')
+        if isinstance(created, str):
+            try:
+                created_dt = datetime.fromisoformat(created)
+                created = created_dt.strftime('%Y-%m-%d %H:%M')
+            except:
+                pass
+
+        company = meta.get('company', 'Unknown Company')
+        title = meta.get('job_title', 'Unknown Position')
+        score = meta.get('match_score', 0)
+        resume_id = meta.get('resume_id', 'unknown')
+
+        click.echo(f"   {i}. {company} - {title}")
+        click.echo(f"      Created: {created} | Match Score: {score:.2f}")
+        click.echo(f"      ID: {resume_id}")
+        click.echo()
+
+    # Let user select one
+    selection = click.prompt("\n   Select resume number to review (or 0 to exit)", type=int, default=0)
+
+    if selection == 0 or selection > len(resumes):
+        click.echo("   Exiting review mode")
+        return
+
+    selected_meta = resumes[selection - 1]
+    resume_id = selected_meta['resume_id']
+    file_path = selected_meta.get('file_path')
+
+    if not file_path or not Path(file_path).exists():
+        click.echo(f"   ❌ Resume file not found: {file_path}")
+        return
+
+    # Load the tailored resume
+    with open(file_path, 'r') as f:
+        tailored_data = json.load(f)
+    tailored_resume = Resume.from_dict(tailored_data)
+
+    # Load base resume if available
+    base_resume_id = selected_meta.get('base_resume_id')
+    original_resume = None
+
+    if base_resume_id:
+        # Try to find base resume
+        base_resume_dir = Path("resume_pool/base_resumes")
+
+        # Try JSON first
+        base_json = base_resume_dir / f"{base_resume_id}.json"
+        if base_json.exists():
+            with open(base_json, 'r') as f:
+                original_resume = Resume.from_dict(json.load(f))
+        else:
+            # Try PDF cache
+            from src.utils.resume_cache import ResumeCache
+            resume_cache = ResumeCache()
+            cached_data = resume_cache.load_parsed_resume(base_resume_id, base_resume_dir / f"{base_resume_id}.pdf")
+            if cached_data:
+                original_resume = Resume.from_dict(cached_data)
+
+    # Display resume info
+    click.echo("\n" + "=" * 80)
+    click.echo(f"📄 REVIEWING: {selected_meta.get('company')} - {selected_meta.get('job_title')}")
+    click.echo("=" * 80)
+    click.echo(f"\n   Base Resume: {base_resume_id or 'Unknown'}")
+    click.echo(f"   Target Role: {selected_meta.get('target_role', 'N/A')}")
+    click.echo(f"   Industry: {selected_meta.get('target_industry', 'N/A')}")
+    click.echo(f"   Match Score: {selected_meta.get('match_score', 0):.2f}")
+
+    if selected_meta.get('key_skills_highlighted'):
+        click.echo(f"   Key Skills: {', '.join(selected_meta['key_skills_highlighted'][:5])}")
+
+    # Try to load cached diff
+    from src.utils.artifact_cache import ArtifactCache
+    cache = ArtifactCache()
+
+    # Generate job hash from archived content if available
+    archived_content = selected_meta.get('archived_job_content', '')
+    if archived_content:
+        job_hash = cache.get_job_hash(archived_content)
+        cached_tailored = cache.load_tailored_resume(job_hash, base_resume_id)
+
+        if cached_tailored and cached_tailored.get('diff'):
+            click.echo("\n   💾 Found cached diff information")
+
+            # Reconstruct diff
+            from src.models.resume import ResumeDiff
+            diff_data = cached_tailored["diff"]
+            diff = ResumeDiff(
+                original_resume_id=diff_data.get("original_resume_id", ""),
+                tailored_resume_id=diff_data.get("tailored_resume_id", ""),
+                summary_changed=diff_data.get("summary_changed", False),
+                original_summary=diff_data.get("original_summary", ""),
+                new_summary=diff_data.get("new_summary", ""),
+                bullets_modified=diff_data.get("bullets_modified", []),
+                skills_added=diff_data.get("skills_added", []),
+                skills_removed=diff_data.get("skills_removed", []),
+                skills_reordered=diff_data.get("skills_reordered", False),
+                keywords_integrated=diff_data.get("keywords_integrated", []),
+                sections_reordered=diff_data.get("sections_reordered", False),
+                sections_added=diff_data.get("sections_added", []),
+                sections_removed=diff_data.get("sections_removed", []),
+            )
+
+            # Reconstruct original resume from cache if available
+            if cached_tailored.get("original_resume_data") and not original_resume:
+                original_resume = Resume.from_dict(cached_tailored["original_resume_data"])
+
+            # Show diff if we have both resumes
+            if original_resume and diff:
+                from src.utils.diff_viewer import ResumeDiffViewer
+                from src.models.job_posting import JobPosting, JobAnalysis
+
+                diff_viewer = ResumeDiffViewer()
+
+                # Show CLI diff
+                click.echo("\n" + "=" * 80)
+                click.echo("📊 RESUME CHANGES")
+                click.echo("=" * 80)
+
+                cli_diff = diff_viewer.generate_cli_diff(original_resume, tailored_resume, diff)
+                click.echo(cli_diff)
+
+                # Generate change summary (without full job analysis)
+                # Create minimal job analysis from metadata
+                job_posting = JobPosting(
+                    url=selected_meta.get('job_posting_url', 'unknown'),
+                    company=selected_meta.get('company', 'Unknown'),
+                    title=selected_meta.get('job_title', 'Unknown'),
+                    description=archived_content or ''
+                )
+
+                job_analysis = JobAnalysis(
+                    job_posting=job_posting,
+                    role_type=selected_meta.get('target_role', 'Unknown'),
+                    seniority='',
+                    industry=selected_meta.get('target_industry', ''),
+                    required_skills=selected_meta.get('key_skills_highlighted', [])
+                )
+
+                summary = diff_viewer.generate_diff_summary(
+                    original_resume, tailored_resume, diff, job_analysis
+                )
+
+                click.echo("\n💡 WHY THESE CHANGES MATTER:")
+                click.echo(f"   {summary['reasoning']}")
+                click.echo(f"\n   📈 Impact Score: {summary['importance_score']}/10")
+                click.echo(f"   ✏️  Total Changes: {summary['total_changes']}")
+
+                # Offer to generate HTML diff report
+                if click.confirm("\n   Generate HTML diff report?", default=True):
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    safe_company = selected_meta.get('company', 'company').replace(" ", "_").lower()
+                    html_path = Path(f"resume_pool/reports/{timestamp}_{safe_company}_review_diff.html")
+                    html_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    html_file = diff_viewer.generate_html_diff(
+                        original_resume, tailored_resume, diff, job_analysis, html_path
+                    )
+                    click.echo(f"   ✅ HTML report saved to: {html_file}")
+
+                    if click.confirm("   Open report in browser?", default=True):
+                        import webbrowser
+                        webbrowser.open(f"file://{Path(html_file).absolute()}")
+
+    # Export options
+    click.echo("\n📄 EXPORT OPTIONS")
+    click.echo("=" * 80)
+
+    from src.utils.resume_exporter import ResumeExporter
+    exporter = ResumeExporter()
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_company = selected_meta.get('company', 'company').replace(" ", "_").lower()
+    exports_dir = Path("resume_pool/exports")
+    exports_dir.mkdir(parents=True, exist_ok=True)
+
+    exported_files = []
+
+    # Printable HTML Resume
+    if click.confirm("   📋 Export as printable HTML resume?", default=True):
+        html_resume_path = exports_dir / f"{timestamp}_{safe_company}_resume.html"
+        html_file = exporter.export_to_html(tailored_resume, html_resume_path)
+        exported_files.append(("HTML Resume", html_file))
+        click.echo(f"      ✅ Saved to: {html_file}")
+
+        if click.confirm("      Open in browser to print/save as PDF?", default=True):
+            import webbrowser
+            webbrowser.open(f"file://{Path(html_file).absolute()}")
+
+    # Plain text format
+    if click.confirm("   📝 Export as formatted text?", default=True):
+        text_path = exports_dir / f"{timestamp}_{safe_company}_resume.txt"
+        text_file = exporter.export_to_text(tailored_resume, text_path)
+        exported_files.append(("Text Resume", text_file))
+        click.echo(f"      ✅ Saved to: {text_file}")
+
+    if exported_files:
+        click.echo(f"\n   ✅ Exported {len(exported_files)} format(s)")
+
+    click.echo("\n✅ Review complete!")
 
 
 @cli.command()

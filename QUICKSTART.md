@@ -48,12 +48,16 @@ python main.py
 ```
 
 You'll be prompted to:
-1. Choose what you want to do (tailor, info, exit)
+1. Choose what you want to do (tailor, review, info, exit)
 2. If tailoring:
    - Confirm use of `current_job.txt` (if it has content)
    - Enter company name
    - Enter job title
    - Confirm or change industry (defaults to healthcare)
+3. If reviewing:
+   - Select from list of existing tailored resumes
+   - View detailed before/after comparisons
+   - Generate reports and export options
 
 **Example Interactive Session (First Time):**
 ```
@@ -166,6 +170,91 @@ python main.py tailor \
   --title "Software Engineer" \
   --industry tech
 ```
+
+#### Review Existing Tailored Resumes
+
+Browse and review your previously tailored resumes with full diff comparison:
+
+```bash
+python main.py review
+```
+
+This will:
+1. 📚 List all your tailored resumes with metadata (company, title, date, match score)
+2. 🔍 Let you select a resume to review
+3. 📊 Show the before/after diff with color-coded changes
+4. 💡 Explain why changes were made and their impact
+5. 📄 Generate HTML diff reports (optional)
+6. 💾 Export to printable HTML or formatted text (optional)
+
+**Example Session:**
+```
+📚 REVIEW TAILORED RESUMES
+================================================================================
+
+   Found 3 tailored resume(s):
+
+   1. MedTech Solutions - Senior Healthcare Data Analyst
+      Created: 2025-10-26 14:30 | Match Score: 0.92
+      ID: john.doe@example.com
+
+   2. Synergie Systems - Entry-Level Healthcare Data Analyst
+      Created: 2025-10-25 10:15 | Match Score: 0.87
+      ID: john.doe@example.com
+
+   3. HealthTech Inc - Data Analyst
+      Created: 2025-10-24 16:45 | Match Score: 0.85
+      ID: john.doe@example.com
+
+   Select resume number to review (or 0 to exit): 1
+
+📄 REVIEWING: MedTech Solutions - Senior Healthcare Data Analyst
+================================================================================
+
+   Base Resume: john.doe@example.com
+   Target Role: Data Analyst
+   Industry: Healthcare
+   Match Score: 0.92
+   Key Skills: Python, SQL, Healthcare Analytics, Tableau, Machine Learning
+
+   💾 Found cached diff information
+
+📊 RESUME CHANGES
+================================================================================
+[Shows detailed before/after comparison with colors and emojis]
+
+💡 WHY THESE CHANGES MATTER:
+   The resume was tailored to emphasize healthcare data analytics experience and technical skills
+   that directly match the job requirements. Key changes include enhancing bullet points with
+   quantifiable metrics, integrating relevant keywords, and highlighting experience with healthcare
+   data systems and compliance requirements.
+
+   📈 Impact Score: 9/10
+   ✏️  Total Changes: 15
+
+   Generate HTML diff report? [Y/n]: y
+   ✅ HTML report saved to: resume_pool/reports/20251026_143000_medtech_solutions_review_diff.html
+   Open report in browser? [Y/n]: y
+
+📄 EXPORT OPTIONS
+================================================================================
+   📋 Export as printable HTML resume? [Y/n]: y
+      ✅ Saved to: resume_pool/exports/20251026_143000_medtech_solutions_resume.html
+      Open in browser to print/save as PDF? [Y/n]: y
+
+   📝 Export as formatted text? [Y/n]: n
+
+   ✅ Exported 1 format(s)
+
+✅ Review complete!
+```
+
+**Use Cases:**
+- Review changes before submitting a resume
+- Compare different tailored versions
+- Re-export resumes in different formats
+- Verify that changes align with job requirements
+- Generate presentation materials for interview prep
 
 ### Output
 

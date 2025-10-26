@@ -162,7 +162,7 @@ class ArtifactCache:
         return None
 
     def save_tailored_resume(
-        self, job_hash: str, resume_id: str, tailored_data: dict, diff_data: dict
+        self, job_hash: str, resume_id: str, tailored_data: dict, diff_data: dict, original_data: dict = None
     ) -> None:
         """
         Save tailored resume artifact.
@@ -172,6 +172,7 @@ class ArtifactCache:
             resume_id: ID of base resume used
             tailored_data: Tailored Resume.to_dict() output
             diff_data: ResumeDiff.to_dict() output
+            original_data: Original (pre-tailoring) Resume.to_dict() output (optional)
         """
         cache_key = f"{job_hash}_{resume_id}"
         cache_path = self._get_cache_path("tailored_resume", cache_key)
@@ -183,6 +184,7 @@ class ArtifactCache:
             "cached_at": datetime.now().isoformat(),
             "resume_data": tailored_data,
             "diff": diff_data,
+            "original_resume_data": original_data,
         }
 
         with open(cache_path, "w") as f:
@@ -306,6 +308,59 @@ class ArtifactCache:
             deleted += 1
 
         return deleted
+
+    def save_skills_discovery(
+        self, job_hash: str, resume_id: str, discovered_bullets: list, discovered_skills: list
+    ) -> None:
+        """
+        Save skills discovery results.
+
+        Args:
+            job_hash: Hash of job description
+            resume_id: ID/email of resume
+            discovered_bullets: List of discovered bullet points
+            discovered_skills: List of discovered skills
+        """
+        cache_key = f"{job_hash}_{resume_id}"
+        cache_path = self._get_cache_path("skills_discovery", cache_key)
+
+        artifact = {
+            "stage": "skills_discovery",
+            "job_hash": job_hash,
+            "resume_id": resume_id,
+            "cached_at": datetime.now().isoformat(),
+            "discovered_bullets": discovered_bullets,
+            "discovered_skills": discovered_skills,
+        }
+
+        with open(cache_path, "w") as f:
+            json.dump(artifact, f, indent=2)
+
+    def load_skills_discovery(self, job_hash: str, resume_id: str) -> Optional[dict]:
+        """
+        Load cached skills discovery results.
+
+        Args:
+            job_hash: Hash of job description
+            resume_id: ID/email of resume
+
+        Returns:
+            Dict with discovered_bullets and discovered_skills, or None
+        """
+        cache_key = f"{job_hash}_{resume_id}"
+        cache_path = self._get_cache_path("skills_discovery", cache_key)
+
+        if cache_path.exists():
+            try:
+                with open(cache_path, "r") as f:
+                    artifact = json.load(f)
+                return {
+                    "discovered_bullets": artifact.get("discovered_bullets", []),
+                    "discovered_skills": artifact.get("discovered_skills", []),
+                }
+            except Exception:
+                return None
+        return None
 
     def get_job_hash(self, job_description: str) -> str:
         """

@@ -507,7 +507,7 @@ class ResumeDiffViewer:
         <div class="header">
             <h1>📊 Resume Transformation Report</h1>
             <div class="meta">
-                <p>{tailored_resume.name} • {job_analysis.role_type} at {job_analysis.company or 'Target Company'}</p>
+                <p>{tailored_resume.name} • {job_analysis.role_type} at {job_analysis.job_posting.company if job_analysis.job_posting else 'Target Company'}</p>
                 <p>Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</p>
             </div>
         </div>
