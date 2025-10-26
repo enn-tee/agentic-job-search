@@ -172,19 +172,39 @@ Provide your review as a hiring manager."""
         # Experience
         sections.append("PROFESSIONAL EXPERIENCE")
         for i, exp in enumerate(resume.experience[:3]):  # Show top 3 positions
-            sections.append(
-                f"\n{exp.title} at {exp.company} ({exp.start_date} - {exp.end_date or 'Present'})"
-            )
-            for bullet in exp.bullets:
+            # Handle both dict and object formats
+            if isinstance(exp, dict):
+                title = exp.get('title', 'N/A')
+                company = exp.get('company', 'N/A')
+                start_date = exp.get('start_date', 'N/A')
+                end_date = exp.get('end_date') or 'Present'
+                bullets = exp.get('bullets', [])
+            else:
+                title = exp.title
+                company = exp.company
+                start_date = exp.start_date
+                end_date = exp.end_date or 'Present'
+                bullets = exp.bullets
+
+            sections.append(f"\n{title} at {company} ({start_date} - {end_date})")
+            for bullet in bullets:
                 sections.append(f"  • {bullet}")
 
         # Education
         if resume.education:
             sections.append("\nEDUCATION")
             for edu in resume.education:
-                sections.append(
-                    f"{edu.degree} in {edu.field_of_study or 'N/A'} - {edu.institution}"
-                )
+                # Handle both dict and object formats
+                if isinstance(edu, dict):
+                    degree = edu.get('degree', 'N/A')
+                    field = edu.get('field_of_study') or 'N/A'
+                    institution = edu.get('institution', 'N/A')
+                else:
+                    degree = edu.degree
+                    field = edu.field_of_study or 'N/A'
+                    institution = edu.institution
+
+                sections.append(f"{degree} in {field} - {institution}")
 
         # Certifications
         if resume.certifications:

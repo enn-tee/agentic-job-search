@@ -163,9 +163,12 @@ Write the optimized summary:"""
                     job_analysis, exp, resume
                 )
 
+                # Get bullets based on whether exp is dict or object
+                original_bullets = exp.get('bullets', []) if isinstance(exp, dict) else exp.bullets
+
                 # Track changes
                 for j, (original, enhanced) in enumerate(
-                    zip(exp.bullets, enhanced_bullets)
+                    zip(original_bullets, enhanced_bullets)
                 ):
                     if original != enhanced:
                         diff.bullets_modified.append(
@@ -178,15 +181,27 @@ Write the optimized summary:"""
                         )
 
                 # Create new WorkExperience with enhanced bullets
-                enhanced_exp = WorkExperience(
-                    company=exp.company,
-                    title=exp.title,
-                    start_date=exp.start_date,
-                    end_date=exp.end_date,
-                    location=exp.location,
-                    bullets=enhanced_bullets,
-                    technologies=exp.technologies,
-                )
+                # Handle both dict and object formats
+                if isinstance(exp, dict):
+                    enhanced_exp = WorkExperience(
+                        company=exp.get('company', ''),
+                        title=exp.get('title', ''),
+                        start_date=exp.get('start_date', ''),
+                        end_date=exp.get('end_date'),
+                        location=exp.get('location'),
+                        bullets=enhanced_bullets,
+                        technologies=exp.get('technologies', []),
+                    )
+                else:
+                    enhanced_exp = WorkExperience(
+                        company=exp.company,
+                        title=exp.title,
+                        start_date=exp.start_date,
+                        end_date=exp.end_date,
+                        location=exp.location,
+                        bullets=enhanced_bullets,
+                        technologies=exp.technologies,
+                    )
                 enhanced_experience.append(enhanced_exp)
             else:
                 # Keep older positions as-is
@@ -222,13 +237,23 @@ Industry tips for experience section:
 
 Return the enhanced bullets as a JSON array of strings."""
 
+        # Handle both dict and object formats for experience
+        if isinstance(experience, dict):
+            bullets = experience.get('bullets', [])
+            title = experience.get('title', 'N/A')
+            company = experience.get('company', 'N/A')
+        else:
+            bullets = experience.bullets
+            title = experience.title
+            company = experience.company
+
         user_message = f"""Enhance these experience bullets for the target role:
 
 CURRENT BULLETS:
-{json.dumps(experience.bullets, indent=2)}
+{json.dumps(bullets, indent=2)}
 
 POSITION:
-{experience.title} at {experience.company}
+{title} at {company}
 
 TARGET ROLE:
 {job_analysis.role_type} ({job_analysis.seniority})
@@ -257,11 +282,11 @@ Return enhanced bullets as JSON array:"""
                 return json.loads(json_match.group(0))
             else:
                 self.log(f"Warning: Could not parse enhanced bullets, keeping original")
-                return experience.bullets
+                return bullets
 
         except Exception as e:
             self.log(f"Warning: Error enhancing bullets: {e}, keeping original")
-            return experience.bullets
+            return bullets
 
     def _integrate_keywords(
         self, job_analysis: JobAnalysis, resume: Resume

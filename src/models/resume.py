@@ -79,6 +79,33 @@ class Resume:
 
     def to_dict(self) -> Dict:
         """Convert to dictionary for serialization."""
+        # Helper to convert experience entries
+        def exp_to_dict(exp):
+            if isinstance(exp, dict):
+                return exp
+            return {
+                "company": exp.company,
+                "title": exp.title,
+                "start_date": exp.start_date,
+                "end_date": exp.end_date,
+                "location": exp.location,
+                "bullets": exp.bullets,
+                "technologies": exp.technologies,
+            }
+
+        # Helper to convert education entries
+        def edu_to_dict(edu):
+            if isinstance(edu, dict):
+                return edu
+            return {
+                "institution": edu.institution,
+                "degree": edu.degree,
+                "field_of_study": edu.field_of_study,
+                "graduation_date": edu.graduation_date,
+                "gpa": edu.gpa,
+                "honors": edu.honors,
+            }
+
         return {
             "name": self.name,
             "email": self.email,
@@ -88,29 +115,8 @@ class Resume:
             "github": self.github,
             "portfolio": self.portfolio,
             "professional_summary": self.professional_summary,
-            "experience": [
-                {
-                    "company": exp.company,
-                    "title": exp.title,
-                    "start_date": exp.start_date,
-                    "end_date": exp.end_date,
-                    "location": exp.location,
-                    "bullets": exp.bullets,
-                    "technologies": exp.technologies,
-                }
-                for exp in self.experience
-            ],
-            "education": [
-                {
-                    "institution": edu.institution,
-                    "degree": edu.degree,
-                    "field_of_study": edu.field_of_study,
-                    "graduation_date": edu.graduation_date,
-                    "gpa": edu.gpa,
-                    "honors": edu.honors,
-                }
-                for edu in self.education
-            ],
+            "experience": [exp_to_dict(exp) for exp in self.experience],
+            "education": [edu_to_dict(edu) for edu in self.education],
             "technical_skills": self.technical_skills,
             "soft_skills": self.soft_skills,
             "tools": self.tools,
