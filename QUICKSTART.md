@@ -262,6 +262,123 @@ See `example_resume.json` for the complete schema.
 - Iterate based on quality review feedback
 - Keep what works, refine what doesn't
 
+## Interactive Skills Discovery
+
+The system includes an **intelligent skills discovery process** that helps you identify transferable skills and experiences you might not realize are relevant.
+
+### How It Works
+
+After analyzing your resume against the job requirements, the system:
+
+1. **Identifies Skill Gaps**
+   - Compares job requirements to your resume
+   - Finds missing required and preferred skills
+   - Prioritizes the most important gaps
+
+2. **Asks Targeted Questions**
+   - Uses Claude to generate personalized questions
+   - Explores adjacent and transferable experiences
+   - Considers volunteer work, projects, hobbies, coursework
+
+3. **Evaluates Your Responses**
+   - Analyzes your answers for skill evidence
+   - Identifies transferable experiences
+   - Generates professional resume bullet points
+
+4. **Multi-Round Exploration**
+   - Up to 3 rounds of questions per skill
+   - Follow-up questions based on your answers
+   - Option to skip after each round
+
+### Example Session
+
+```
+🔍 Analyzing skill gaps...
+   Found 3 missing required skills
+   Found 2 missing preferred skills
+
+💡 Would you like to explore if you have transferable skills?
+   This interactive process helps discover relevant experience you might have missed.
+   Start skills discovery? [Y/n]: y
+
+============================================================
+🎯 Exploring skill 1/5: SQL Database Management
+============================================================
+
+📋 Why this matters: Database skills are critical for analyzing healthcare data
+    and generating insights from electronic health records.
+
+💭 Think about:
+   • Academic projects or coursework
+   • Volunteer work or community involvement
+   • Personal projects or hobbies
+
+❓ Question 1:
+   Have you ever worked with spreadsheets to organize or analyze large amounts
+   of data? This could be Excel, Google Sheets, or similar tools.
+
+   Your answer (or 'skip' to move on): Yes, I managed a volunteer database
+   for a local food bank using Google Sheets. I tracked donations, inventory,
+   and distribution across 3 locations with about 5000 rows of data.
+
+   ✅ Great! Found relevant experience!
+   💡 Your experience with structured data management in Google Sheets demonstrates
+   foundational database concepts like data organization, queries, and reporting.
+
+   📝 Suggested resume bullets:
+      1. Managed multi-location inventory database tracking 5,000+ donation records
+         using structured data management principles
+      2. Developed data tracking system for food bank operations, creating reports
+         and queries to optimize distribution across 3 sites
+
+   Add these bullets to your resume? [Y/n]: y
+
+============================================================
+📊 Discovery Summary
+============================================================
+✅ Discovered skills: SQL Database Management, Data Analysis
+✅ New bullet points: 3
+
+   ✅ Resume enhanced with discovered skills
+```
+
+### Configuration
+
+You can customize the discovery process by modifying these settings in `run_skills_discovery()`:
+
+```python
+max_skills_to_explore = 5    # Number of missing skills to explore
+max_rounds_per_skill = 3     # Question rounds before offering skip
+```
+
+### When Skills Discovery Runs
+
+Skills discovery is **optional** and runs:
+- After resume matching
+- Before tailoring
+- Only if skill gaps are detected
+- Only if you choose to participate
+
+You can skip the entire process or skip individual skills at any time.
+
+### Tips for Best Results
+
+**Be Specific:**
+- Describe actual projects or situations
+- Include numbers and outcomes when possible
+- Mention tools, processes, or methodologies
+
+**Think Broadly:**
+- Consider non-work experiences
+- Think about related or adjacent skills
+- Don't dismiss "small" projects
+
+**Examples to Consider:**
+- **Academic:** Group projects, research, coursework
+- **Volunteer:** Non-profit work, community projects
+- **Personal:** Side projects, hobbies, online courses
+- **Work:** Training, informal tasks, learning experiences
+
 ## Caching & Performance
 
 The system includes **multi-layer intelligent caching** for blazing-fast repeat runs and significant API cost savings.

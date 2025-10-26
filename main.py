@@ -15,8 +15,9 @@ from src.agents import (
     TailoringOrchestratorAgent,
     QualityReviewerAgent,
 )
-from src.models.job_posting import JobPosting
-from src.models.resume import Resume, ResumeMetadata
+from src.agents.skills_discovery import SkillsDiscoveryAgent
+from src.models.job_posting import JobPosting, JobAnalysis
+from src.models.resume import Resume, ResumeMetadata, WorkExperience
 
 # Load environment variables
 load_dotenv()
@@ -316,6 +317,13 @@ def tailor(job_file, company, title, base_resume, industry, output):
         best_resume, best_metadata, score = matches[0]
         click.echo(f"   Best match: {best_metadata.resume_id} (score: {score:.2f})")
 
+    # Step 3.5: Interactive Skills Discovery (optional)
+    click.echo("\n🔍 Analyzing skill gaps...")
+    enhanced_resume = run_skills_discovery(job_analysis, best_resume, adapter)
+    if enhanced_resume:
+        best_resume = enhanced_resume
+        click.echo("   ✅ Resume enhanced with discovered skills")
+
     # Step 4: Tailor the resume (with caching)
     click.echo("\n✍️  Tailoring resume...")
     cached_tailored = cache.load_tailored_resume(job_hash, best_metadata.resume_id)
@@ -404,6 +412,174 @@ def tailor(job_file, company, title, base_resume, industry, output):
     click.echo(f"\n✅ Tailored resume saved to: {output_path}")
     click.echo(f"✅ Metadata saved to: {metadata_path}")
     click.echo("\n🎉 Done!")
+
+
+def run_skills_discovery(
+    job_analysis: JobAnalysis, resume: Resume, industry_adapter
+) -> Resume:
+    """
+    Run interactive skills discovery to fill gaps and find transferable skills.
+
+    Returns:
+        Enhanced resume with newly discovered skills/experience, or None if skipped
+    """
+    # Initialize discovery agent
+    discovery_agent = SkillsDiscoveryAgent()
+
+    # Analyze gaps
+    gaps = discovery_agent.analyze_skill_gaps(job_analysis, resume)
+
+    if not gaps["missing_required"] and not gaps["missing_preferred"]:
+        click.echo("   ✅ No significant skill gaps found!")
+        return None
+
+    # Show gap summary
+    click.echo(f"   Found {len(gaps['missing_required'])} missing required skills")
+    if gaps["missing_preferred"]:
+        click.echo(
+            f"   Found {len(gaps['missing_preferred'])} missing preferred skills"
+        )
+
+    # Ask if user wants to explore
+    click.echo("\n💡 Would you like to explore if you have transferable skills?")
+    click.echo(
+        "   This interactive process helps discover relevant experience you might have missed."
+    )
+
+    if not click.confirm("   Start skills discovery?", default=True):
+        return None
+
+    # Track discovered skills and experiences
+    discovered_bullets = []
+    skills_to_add = []
+    max_skills_to_explore = 5
+    max_rounds_per_skill = 3
+
+    # Combine and prioritize skills to explore
+    skills_to_explore = gaps["missing_required"][:3] + gaps["missing_preferred"][:2]
+
+    for skill_index, missing_skill in enumerate(skills_to_explore[:max_skills_to_explore]):
+        click.echo(f"\n{'='*60}")
+        click.echo(f"🎯 Exploring skill {skill_index + 1}/{len(skills_to_explore[:max_skills_to_explore])}: {missing_skill}")
+        click.echo("=" * 60)
+
+        previous_responses = []
+
+        for round_num in range(max_rounds_per_skill):
+            # Generate discovery questions
+            discovery = discovery_agent.discover_transferable_skills(
+                missing_skill, job_analysis, resume, previous_responses
+            )
+
+            # Show context
+            if round_num == 0:
+                click.echo(f"\n📋 Why this matters: {discovery.get('context', 'N/A')}")
+                if discovery.get("transferable_examples"):
+                    click.echo("\n💭 Think about:")
+                    for example in discovery["transferable_examples"][:3]:
+                        click.echo(f"   • {example}")
+
+            # Ask questions
+            click.echo(f"\n❓ Question {round_num + 1}:")
+            questions = discovery.get("questions", [])
+            if questions:
+                click.echo(f"   {questions[0]}")
+            else:
+                click.echo(
+                    f"   Do you have any experience related to {missing_skill}?"
+                )
+
+            # Get user response
+            user_response = click.prompt(
+                "   Your answer (or 'skip' to move on)", type=str, default=""
+            )
+
+            if user_response.lower() in ["skip", "s", "no", "n", ""]:
+                click.echo("   ⏭️  Skipping this skill")
+                break
+
+            # Evaluate response
+            previous_responses.append(f"Q: {questions[0] if questions else 'Experience?'}")
+            previous_responses.append(f"A: {user_response}")
+
+            evaluation = discovery_agent.evaluate_response(
+                missing_skill, user_response, job_analysis
+            )
+
+            if evaluation.get("has_skill") and evaluation.get("confidence", 0) > 0.5:
+                # Skill discovered!
+                click.echo(f"\n   ✅ Great! Found relevant experience!")
+                click.echo(f"   💡 {evaluation.get('reasoning', '')}")
+
+                # Generate bullet points
+                if evaluation.get("bullet_suggestions"):
+                    click.echo("\n   📝 Suggested resume bullets:")
+                    for i, bullet in enumerate(
+                        evaluation["bullet_suggestions"][:2], 1
+                    ):
+                        click.echo(f"      {i}. {bullet}")
+
+                    # Ask which to add
+                    add_bullets = click.confirm(
+                        "   Add these bullets to your resume?", default=True
+                    )
+                    if add_bullets:
+                        discovered_bullets.extend(evaluation["bullet_suggestions"][:2])
+                        skills_to_add.append(missing_skill)
+
+                break  # Move to next skill
+
+            elif evaluation.get("needs_more_exploration") and round_num < max_rounds_per_skill - 1:
+                # Need more info
+                click.echo(f"   🤔 {evaluation.get('reasoning', 'Tell me more...')}")
+                if evaluation.get("follow_up_question"):
+                    click.echo(f"\n   Follow-up: {evaluation['follow_up_question']}")
+                continue
+
+            else:
+                # Not a match after exploration
+                if round_num >= max_rounds_per_skill - 1:
+                    click.echo(
+                        f"   ℹ️  After {max_rounds_per_skill} rounds, couldn't find clear connection to {missing_skill}"
+                    )
+                    if click.confirm("   Skip to next skill?", default=True):
+                        break
+
+    # Apply discoveries to resume
+    if not discovered_bullets and not skills_to_add:
+        click.echo("\n   No new skills or experiences discovered")
+        return None
+
+    click.echo(f"\n{'='*60}")
+    click.echo("📊 Discovery Summary")
+    click.echo("=" * 60)
+
+    if skills_to_add:
+        click.echo(f"✅ Discovered skills: {', '.join(skills_to_add)}")
+    if discovered_bullets:
+        click.echo(f"✅ New bullet points: {len(discovered_bullets)}")
+
+    # Create enhanced resume
+    enhanced_resume = Resume.from_dict(resume.to_dict())
+
+    # Add skills
+    for skill in skills_to_add:
+        if skill not in enhanced_resume.technical_skills:
+            enhanced_resume.technical_skills.append(skill)
+
+    # Add bullets to most recent position
+    if discovered_bullets and enhanced_resume.experience:
+        # Get most recent experience
+        recent_exp = enhanced_resume.experience[0]
+
+        if isinstance(recent_exp, dict):
+            bullets = recent_exp.get('bullets', [])
+            bullets.extend(discovered_bullets)
+            recent_exp['bullets'] = bullets
+        else:
+            recent_exp.bullets.extend(discovered_bullets)
+
+    return enhanced_resume
 
 
 def load_resume_pool(resume_dir: Path) -> list:
