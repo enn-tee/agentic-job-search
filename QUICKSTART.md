@@ -172,6 +172,7 @@ python main.py tailor \
 The system will generate:
 - **Tailored Resume**: `resume_pool/tailored_resumes/YYYYMMDD_HHMMSS_company.json`
 - **Metadata**: `resume_pool/metadata/YYYYMMDD_HHMMSS_company.json`
+- **Diff Report**: `resume_pool/reports/YYYYMMDD_HHMMSS_company_diff.html` (optional)
 
 The output includes:
 - Optimized professional summary
@@ -179,6 +180,7 @@ The output includes:
 - ATS-optimized keywords
 - Aligned skills section
 - Quality review score and feedback
+- Visual before/after comparison with change reasoning
 
 ## Creating Your Base Resume
 
@@ -379,6 +381,162 @@ You can skip the entire process or skip individual skills at any time.
 - **Personal:** Side projects, hobbies, online courses
 - **Work:** Training, informal tasks, learning experiences
 
+## Visual Diff Reports
+
+After tailoring your resume, the system automatically shows you **exactly what changed and why**.
+
+### CLI Diff View
+
+In your terminal, you'll see:
+
+```
+========================================================
+📊 RESUME CHANGES
+========================================================
+
+📝 PROFESSIONAL SUMMARY
+--------------------------------------------------------
+❌ BEFORE:
+   Experienced data analyst with background in healthcare...
+
+✅ AFTER:
+   Healthcare Data Analyst with 3+ years of experience transforming
+   clinical data into actionable insights using SQL, Python, and
+   Tableau to improve patient outcomes and operational efficiency...
+
+💼 EXPERIENCE ENHANCEMENTS
+--------------------------------------------------------
+Position 1:
+❌ BEFORE: Analyzed patient data to identify trends
+✅ AFTER:  Analyzed 50,000+ patient records using SQL and Python,
+           identifying trends that reduced readmission rates by 15%
+           and saved $2M annually
+
+🔧 SKILLS UPDATES
+--------------------------------------------------------
+✅ ADDED: SQL, Tableau, HIPAA Compliance, EHR Systems, Python, Data Visualization
+
+🔑 ATS KEYWORDS INTEGRATED
+--------------------------------------------------------
+   healthcare analytics, clinical data, patient outcomes, EHR, HIPAA, SQL,
+   statistical analysis, data visualization, population health, quality metrics
+
+💡 WHY THESE CHANGES MATTER:
+   Repositioned your profile to align with Entry-Level Healthcare Data
+   Analyst requirements • Enhanced achievement statements to demonstrate
+   impact and match key responsibilities • Added critical keywords to
+   pass ATS screening and match job requirements
+
+   📈 Impact Score: 9/10
+   ✏️  Total Changes: 23
+```
+
+### Interactive HTML Report
+
+The system generates a beautiful, interactive HTML report with:
+
+**Features:**
+- 📊 **Visual Dashboard**
+  - Impact score and statistics
+  - Total changes counter
+  - Skills added/modified tracker
+
+- 🎨 **Side-by-Side Comparison**
+  - Before/after views for each section
+  - Color-coded changes (additions in green, removals in red)
+  - Section-by-section breakdown
+
+- 💡 **Change Reasoning**
+  - Why each change was made
+  - How it improves ATS compatibility
+  - Connection to job requirements
+  - Importance rating (Critical/High/Medium/Low)
+
+- 📝 **Detailed Bullet Analysis**
+  - Shows every enhanced bullet point
+  - Highlights added metrics and action verbs
+  - Explains impact of each modification
+
+**Example Report Sections:**
+
+**Overall Impact Card:**
+```
+Made 23 strategic changes to target Entry-Level Healthcare Data Analyst role
+
+Statistics:
+  23 Total Changes
+  9/10 Importance Score
+  6 Skills Added
+  12 Bullets Enhanced
+```
+
+**Why These Changes Matter:**
+```
+Repositioned your profile to align with Entry-Level Healthcare Data
+Analyst requirements • Enhanced achievement statements to demonstrate
+impact and match key responsibilities • Added critical keywords to
+pass ATS screening and match job requirements • Integrated 15
+industry-specific terms to optimize for ATS
+```
+
+**Experience Enhancements:**
+Each bullet shows the transformation with reasoning:
+```
+Bullet Point 1
+❌ Before: Analyzed healthcare data to support decision making
+✅ After:  Analyzed 50,000+ patient records using SQL and Python,
+           identifying trends that reduced readmission rates by 15%
+```
+
+### Generating Reports
+
+**Automatic CLI View:**
+- Shows after every tailoring run
+- No extra action needed
+- Clear, readable terminal output
+
+**HTML Report Generation:**
+After the CLI view, you'll be asked:
+```
+   Generate detailed HTML diff report? [Y/n]: y
+   ✅ HTML report saved to: resume_pool/reports/20251026_123456_company_diff.html
+
+   Open report in browser? [Y/n]: y
+   # Report opens automatically in your default browser
+```
+
+**Manual Report Location:**
+All reports saved in `resume_pool/reports/` with timestamp and company name.
+
+### Report Benefits
+
+**For You:**
+- ✅ Understand exactly what changed
+- ✅ Learn why changes improve your resume
+- ✅ Build confidence in the tailoring process
+- ✅ Share with mentors/career coaches for review
+- ✅ Track what works across applications
+
+**For Iteration:**
+- Compare multiple versions
+- See which changes are most impactful
+- Learn ATS optimization patterns
+- Refine your base resume based on insights
+
+### Tips
+
+**Review Before Applying:**
+- Always review the diff report before submitting
+- Ensure changes accurately represent your experience
+- Verify metrics and numbers are correct
+- Check that added skills are truthful
+
+**Save Reports:**
+- Keep reports for each application
+- Reference when preparing for interviews
+- Use to remember which skills you emphasized
+- Track successful approaches
+
 ## Caching & Performance
 
 The system includes **multi-layer intelligent caching** for blazing-fast repeat runs and significant API cost savings.
@@ -401,12 +559,18 @@ The system includes **multi-layer intelligent caching** for blazing-fast repeat 
    - Automatic re-parse when PDF modified
    - Massive speed improvement for loading resume pool
 
-4. **Tailored Resumes** (`.cache/tailored_resume_*.json`)
+4. **Resume Selection** (`.cache/selected_resume_*.json`)
+   - Remembers which resume was chosen for each job
+   - Skips re-matching on repeat runs
+   - Uses same resume consistently per job
+   - Only re-matches if resume removed from pool
+
+5. **Tailored Resumes** (`.cache/tailored_resume_*.json`)
    - Cached per job + base resume combination
    - Includes diff tracking
    - Iterate on different base resumes instantly
 
-5. **Quality Reviews** (`.cache/quality_review_*.json`)
+6. **Quality Reviews** (`.cache/quality_review_*.json`)
    - Cached per tailored resume
    - Instant feedback on repeat runs
 
@@ -420,11 +584,12 @@ python main.py cache --list
 Output:
 ```
 📦 Cached Artifacts:
-   Job Analyses:      1
-   Resume Matches:    0
-   Tailored Resumes:  1
-   Quality Reviews:   1
-   Total: 3 artifacts
+   Job Analyses:       1
+   Resume Matches:     0
+   Selected Resumes:   1
+   Tailored Resumes:   1
+   Quality Reviews:    1
+   Total: 4 artifacts
 
 📄 Parsed PDF Resumes: 1
    • my_resume

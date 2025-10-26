@@ -18,6 +18,14 @@ class SkillsDiscoveryAgent(BaseAgent):
         self.max_rounds = 3  # Maximum rounds before offering skip
         self.current_round = 0
 
+    def run(self, job_analysis: JobAnalysis, resume: Resume) -> Dict:
+        """
+        Main entry point - analyze skill gaps.
+
+        Returns gap analysis dict.
+        """
+        return self.analyze_skill_gaps(job_analysis, resume)
+
     def analyze_skill_gaps(
         self, job_analysis: JobAnalysis, resume: Resume
     ) -> Dict[str, List[str]]:

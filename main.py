@@ -296,7 +296,7 @@ def tailor(job_file, company, title, base_resume, industry, output):
 
     click.echo(f"   Found {len(resume_pool)} base resume(s)")
 
-    # Step 3: Match or select specific resume
+    # Step 3: Match or select specific resume (with caching)
     if base_resume:
         # Find specific resume
         selected = next(
@@ -306,16 +306,43 @@ def tailor(job_file, company, title, base_resume, industry, output):
             click.echo(f"Error: Resume '{base_resume}' not found")
             return
         best_resume, best_metadata, score = selected[0], selected[1], 1.0
+        # Cache the selection
+        cache.save_selected_resume(job_hash, best_metadata.resume_id, score)
     else:
-        click.echo("\n🎯 Matching resumes to job...")
-        # Initialize matcher agent (not cached - always runs fresh)
-        resume_matcher = ResumeMatcherAgent()
-        matches = resume_matcher.run(job_analysis, resume_pool)
-        if not matches:
-            click.echo("   Error: No matching resumes found")
-            return
-        best_resume, best_metadata, score = matches[0]
-        click.echo(f"   Best match: {best_metadata.resume_id} (score: {score:.2f})")
+        # Check if we have a cached selection
+        cached_selection = cache.load_selected_resume(job_hash)
+
+        if cached_selection:
+            # Find the cached resume in the pool
+            cached_resume_id = cached_selection["resume_id"]
+            selected = next(
+                (r for r in resume_pool if r[1].resume_id == cached_resume_id), None
+            )
+
+            if selected:
+                best_resume, best_metadata, score = (
+                    selected[0],
+                    selected[1],
+                    cached_selection["match_score"],
+                )
+                click.echo(f"\n💾 Using cached resume selection: {best_metadata.resume_id} (score: {score:.2f})")
+            else:
+                # Cached resume not in pool anymore, re-match
+                cached_selection = None
+
+        if not cached_selection:
+            click.echo("\n🎯 Matching resumes to job...")
+            # Initialize matcher agent (not cached - always runs fresh)
+            resume_matcher = ResumeMatcherAgent()
+            matches = resume_matcher.run(job_analysis, resume_pool)
+            if not matches:
+                click.echo("   Error: No matching resumes found")
+                return
+            best_resume, best_metadata, score = matches[0]
+            click.echo(f"   Best match: {best_metadata.resume_id} (score: {score:.2f})")
+
+            # Cache the selection
+            cache.save_selected_resume(job_hash, best_metadata.resume_id, score)
 
     # Step 3.5: Interactive Skills Discovery (optional)
     click.echo("\n🔍 Analyzing skill gaps...")
@@ -374,6 +401,50 @@ def tailor(job_file, company, title, base_resume, industry, output):
         click.echo("\n   💡 Suggestions:")
         for suggestion in review["suggestions"][:3]:
             click.echo(f"      • {suggestion}")
+
+    # Step 5.5: Show diff and generate report
+    if diff:
+        from src.utils.diff_viewer import ResumeDiffViewer
+
+        diff_viewer = ResumeDiffViewer()
+
+        # Show CLI diff
+        click.echo("\n" + "=" * 120)
+        click.echo("📊 RESUME CHANGES")
+        click.echo("=" * 120)
+
+        cli_diff = diff_viewer.generate_cli_diff(best_resume, tailored_resume, diff)
+        click.echo(cli_diff)
+
+        # Generate change summary
+        summary = diff_viewer.generate_diff_summary(
+            best_resume, tailored_resume, diff, job_analysis
+        )
+
+        click.echo("\n💡 WHY THESE CHANGES MATTER:")
+        click.echo(f"   {summary['reasoning']}")
+        click.echo(f"\n   📈 Impact Score: {summary['importance_score']}/10")
+        click.echo(f"   ✏️  Total Changes: {summary['total_changes']}")
+
+        # Offer to generate HTML report
+        if click.confirm("\n   Generate detailed HTML diff report?", default=True):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_company = company.replace(" ", "_").lower()
+            html_path = Path(
+                f"resume_pool/reports/{timestamp}_{safe_company}_diff.html"
+            )
+            html_path.parent.mkdir(parents=True, exist_ok=True)
+
+            html_file = diff_viewer.generate_html_diff(
+                best_resume, tailored_resume, diff, job_analysis, html_path
+            )
+            click.echo(f"   ✅ HTML report saved to: {html_file}")
+
+            # Try to open in browser
+            if click.confirm("   Open report in browser?", default=True):
+                import webbrowser
+
+                webbrowser.open(f"file://{Path(html_file).absolute()}")
 
     # Step 6: Save tailored resume
     if not output:
@@ -721,10 +792,11 @@ def cache(list_cache, clear_cache, stage):
         # Show artifact cache
         counts = artifact_cache.list_cached_artifacts()
         click.echo("\n📦 Cached Artifacts:\n")
-        click.echo(f"   Job Analyses:      {counts['job_analysis']}")
-        click.echo(f"   Resume Matches:    {counts['resume_matches']}")
-        click.echo(f"   Tailored Resumes:  {counts['tailored_resume']}")
-        click.echo(f"   Quality Reviews:   {counts['quality_review']}")
+        click.echo(f"   Job Analyses:       {counts['job_analysis']}")
+        click.echo(f"   Resume Matches:     {counts['resume_matches']}")
+        click.echo(f"   Selected Resumes:   {counts['selected_resume']}")
+        click.echo(f"   Tailored Resumes:   {counts['tailored_resume']}")
+        click.echo(f"   Quality Reviews:    {counts['quality_review']}")
         total = sum(counts.values())
         click.echo(f"\n   Total: {total} artifacts")
 

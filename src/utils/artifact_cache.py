@@ -115,6 +115,52 @@ class ArtifactCache:
                 return None
         return None
 
+    def save_selected_resume(self, job_hash: str, resume_id: str, match_score: float) -> None:
+        """
+        Save which resume was selected for this job.
+
+        Args:
+            job_hash: Hash of job description
+            resume_id: ID of selected resume
+            match_score: Match score (0-1)
+        """
+        cache_path = self._get_cache_path("selected_resume", job_hash)
+
+        artifact = {
+            "stage": "selected_resume",
+            "job_hash": job_hash,
+            "cached_at": datetime.now().isoformat(),
+            "resume_id": resume_id,
+            "match_score": match_score,
+        }
+
+        with open(cache_path, "w") as f:
+            json.dump(artifact, f, indent=2)
+
+    def load_selected_resume(self, job_hash: str) -> Optional[dict]:
+        """
+        Load cached resume selection for this job.
+
+        Args:
+            job_hash: Hash of job description
+
+        Returns:
+            Dict with resume_id and match_score, or None if not cached
+        """
+        cache_path = self._get_cache_path("selected_resume", job_hash)
+
+        if cache_path.exists():
+            try:
+                with open(cache_path, "r") as f:
+                    artifact = json.load(f)
+                return {
+                    "resume_id": artifact["resume_id"],
+                    "match_score": artifact["match_score"],
+                }
+            except Exception:
+                return None
+        return None
+
     def save_tailored_resume(
         self, job_hash: str, resume_id: str, tailored_data: dict, diff_data: dict
     ) -> None:
@@ -226,6 +272,7 @@ class ArtifactCache:
         counts = {
             "job_analysis": 0,
             "resume_matches": 0,
+            "selected_resume": 0,
             "tailored_resume": 0,
             "quality_review": 0,
         }
