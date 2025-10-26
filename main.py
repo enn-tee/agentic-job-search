@@ -307,6 +307,8 @@ def tailor(job_file, company, title, base_resume, industry, output):
         best_resume, best_metadata, score = selected[0], selected[1], 1.0
     else:
         click.echo("\n🎯 Matching resumes to job...")
+        # Initialize matcher agent (not cached - always runs fresh)
+        resume_matcher = ResumeMatcherAgent()
         matches = resume_matcher.run(job_analysis, resume_pool)
         if not matches:
             click.echo("   Error: No matching resumes found")
@@ -405,16 +407,18 @@ def tailor(job_file, company, title, base_resume, industry, output):
 
 
 def load_resume_pool(resume_dir: Path) -> list:
-    """Load all resumes from the pool (supports JSON and PDF)."""
+    """Load all resumes from the pool (supports JSON and PDF with caching)."""
     from src.utils.pdf_parser import PDFResumeParser
+    from src.utils.resume_cache import ResumeCache
 
     pool = []
 
     if not resume_dir.exists():
         return pool
 
-    # Initialize PDF parser
+    # Initialize PDF parser and resume cache
     pdf_parser = PDFResumeParser()
+    resume_cache = ResumeCache()
 
     # Load JSON resumes
     for resume_file in resume_dir.glob("*.json"):
@@ -438,26 +442,40 @@ def load_resume_pool(resume_dir: Path) -> list:
         except Exception as e:
             click.echo(f"   ⚠️  Warning: Could not load {resume_file}: {e}")
 
-    # Load PDF resumes
+    # Load PDF resumes (with caching)
     for resume_file in resume_dir.glob("*.pdf"):
-        try:
-            click.echo(f"   📄 Parsing PDF resume: {resume_file.name}...")
+        resume_id = resume_file.stem
 
-            # Parse PDF to structured data using Claude
-            resume_data = pdf_parser.parse_pdf_resume(resume_file)
+        try:
+            # Check if we have a cached version
+            cached_data = resume_cache.load_parsed_resume(resume_id, resume_file)
+
+            if cached_data:
+                click.echo(f"   📄 {resume_file.name}")
+                click.echo(f"      💾 Using cached parse (file unchanged)")
+                resume_data = cached_data
+            else:
+                click.echo(f"   📄 {resume_file.name}")
+                click.echo(f"      🔍 Parsing PDF (will be cached)...")
+
+                # Parse PDF to structured data using Claude
+                resume_data = pdf_parser.parse_pdf_resume(resume_file)
+
+                # Cache the parsed data
+                resume_cache.save_parsed_resume(resume_id, resume_file, resume_data)
+                click.echo(f"      ✅ Parsed and cached")
 
             # Convert to Resume object
             resume = Resume.from_dict(resume_data)
 
             # Create metadata
             metadata = ResumeMetadata(
-                resume_id=resume_file.stem,
+                resume_id=resume_id,
                 created_at=datetime.now(),
                 file_path=str(resume_file),
             )
 
             pool.append((resume, metadata))
-            click.echo(f"   ✅ Successfully parsed PDF: {resume.name}")
 
         except Exception as e:
             click.echo(f"   ⚠️  Warning: Could not parse PDF {resume_file}: {e}")
@@ -513,15 +531,18 @@ def info(industry):
 )
 @click.option(
     "--stage",
-    help="Specific stage to clear (job_analysis, tailored_resume, quality_review)",
+    help="Specific stage to clear (job_analysis, tailored_resume, quality_review, resumes)",
 )
 def cache(list_cache, clear_cache, stage):
     """Manage artifact cache."""
     from src.utils.artifact_cache import ArtifactCache
+    from src.utils.resume_cache import ResumeCache
 
     artifact_cache = ArtifactCache()
+    resume_cache = ResumeCache()
 
     if list_cache:
+        # Show artifact cache
         counts = artifact_cache.list_cached_artifacts()
         click.echo("\n📦 Cached Artifacts:\n")
         click.echo(f"   Job Analyses:      {counts['job_analysis']}")
@@ -529,20 +550,47 @@ def cache(list_cache, clear_cache, stage):
         click.echo(f"   Tailored Resumes:  {counts['tailored_resume']}")
         click.echo(f"   Quality Reviews:   {counts['quality_review']}")
         total = sum(counts.values())
-        click.echo(f"\n   Total: {total} artifacts\n")
+        click.echo(f"\n   Total: {total} artifacts")
+
+        # Show parsed resume cache
+        cached_resumes = resume_cache.list_cached_resumes()
+        click.echo(f"\n📄 Parsed PDF Resumes: {len(cached_resumes)}")
+        if cached_resumes:
+            for resume_id, meta in cached_resumes.items():
+                click.echo(f"   • {resume_id}")
+                click.echo(f"     Cached: {meta.get('cached_at', 'unknown')}")
+                click.echo(f"     Source: {Path(meta.get('source_file', '')).name}")
+
+        click.echo()
 
     elif clear_cache:
-        if stage:
+        if stage == "resumes":
+            # Clear only parsed resumes
+            deleted = resume_cache.clear_cache()
+            click.echo(f"✅ Cleared {deleted // 2} parsed resume(s)")  # Divide by 2 (data + meta files)
+        elif stage:
+            # Clear specific artifact stage
             deleted = artifact_cache.clear_cache(stage)
             click.echo(f"✅ Cleared {deleted} {stage} artifact(s)")
         else:
-            if click.confirm("Clear ALL cached artifacts?"):
-                deleted = artifact_cache.clear_cache()
-                click.echo(f"✅ Cleared {deleted} artifact(s)")
+            # Clear all caches
+            if click.confirm("Clear ALL cached artifacts and parsed resumes?"):
+                artifact_deleted = artifact_cache.clear_cache()
+                resume_deleted = resume_cache.clear_cache()
+                click.echo(f"✅ Cleared {artifact_deleted} artifact(s)")
+                click.echo(f"✅ Cleared {resume_deleted // 2} parsed resume(s)")
     else:
         # Show help
-        click.echo("Use --list to view cached artifacts")
-        click.echo("Use --clear to delete cached artifacts")
+        click.echo("\nCache Management Commands:\n")
+        click.echo("  --list              View all cached items")
+        click.echo("  --clear             Clear all caches")
+        click.echo("  --clear --stage X   Clear specific cache")
+        click.echo("\nStages:")
+        click.echo("  job_analysis        Job posting analyses")
+        click.echo("  tailored_resume     Tailored resumes")
+        click.echo("  quality_review      Quality reviews")
+        click.echo("  resumes             Parsed PDF resumes")
+        click.echo()
 
 
 if __name__ == "__main__":
