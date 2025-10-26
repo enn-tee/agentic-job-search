@@ -1,0 +1,269 @@
+industry: healthcare
+display_name: "Healthcare & Life Sciences"
+description: "Healthcare data analytics, clinical informatics, and health IT positions"
+
+# MCP Server Configuration (optional, disabled by default)
+mcp_servers:
+  enabled: false
+  servers:
+    - name: omop-terminology
+      package: "@healthcare/mcp-omop"
+      description: "Clinical terminology mapping using OMOP CDM"
+      use_case: "Understanding clinical data analyst roles and terminology"
+      priority: optional
+
+    - name: fhir-data
+      package: "@healthcare/mcp-fhir"
+      description: "Healthcare interoperability standard access"
+      use_case: "Health informatics and EHR integration positions"
+      priority: optional
+
+    - name: google-jobs
+      package: "server-google-jobs"
+      description: "Google Jobs search via SerpAPI"
+      use_case: "Automated job aggregation"
+      priority: recommended
+      config:
+        search_terms:
+          - "healthcare data analyst"
+          - "clinical data analyst"
+          - "health informatics analyst"
+          - "healthcare business intelligence"
+          - "clinical analytics"
+
+# Industry-specific job boards and sources
+job_boards:
+  - name: "Health eCareers"
+    url: "https://www.healthecareers.com"
+    type: "specialized"
+
+  - name: "LinkedIn Healthcare"
+    url: "https://www.linkedin.com"
+    filters:
+      industry: "healthcare"
+      keywords: ["data analyst", "analytics"]
+
+  - name: "Indeed Healthcare"
+    url: "https://www.indeed.com"
+    filters:
+      keywords: "healthcare data analyst"
+
+  - name: "HIMSS JobMine"
+    url: "https://jobmine.himss.org"
+    type: "specialized"
+    description: "Healthcare Information and Management Systems Society"
+
+# Healthcare-specific terminology and acronyms
+terminology:
+  acronyms:
+    # Healthcare Systems & Standards
+    EHR: "Electronic Health Records"
+    EMR: "Electronic Medical Records"
+    FHIR: "Fast Healthcare Interoperability Resources"
+    HL7: "Health Level 7"
+    OMOP: "Observational Medical Outcomes Partnership"
+    CDM: "Common Data Model"
+
+    # Regulations & Compliance
+    HIPAA: "Health Insurance Portability and Accountability Act"
+    PHI: "Protected Health Information"
+    HITECH: "Health Information Technology for Economic and Clinical Health"
+
+    # Clinical Coding
+    ICD: "International Classification of Diseases"
+    CPT: "Current Procedural Terminology"
+    SNOMED: "Systematized Nomenclature of Medicine"
+    DRG: "Diagnosis-Related Group"
+
+    # Healthcare Analytics
+    VBC: "Value-Based Care"
+    ACO: "Accountable Care Organization"
+    CMS: "Centers for Medicare & Medicaid Services"
+    HEDIS: "Healthcare Effectiveness Data and Information Set"
+    NCQA: "National Committee for Quality Assurance"
+
+    # Organizations
+    HIMSS: "Healthcare Information and Management Systems Society"
+    AHIMA: "American Health Information Management Association"
+
+  # Common healthcare terms to understand
+  common_terms:
+    - population health
+    - clinical outcomes
+    - patient outcomes
+    - quality measures
+    - risk stratification
+    - care coordination
+    - utilization management
+    - claims analytics
+    - clinical decision support
+    - readmission rates
+    - length of stay (LOS)
+    - cost per episode
+    - care gaps
+    - social determinants of health (SDOH)
+
+# Skill taxonomy for healthcare data analytics
+skill_categories:
+  clinical_knowledge:
+    priority: high
+    skills:
+      - Medical terminology
+      - HIPAA compliance and PHI handling
+      - Clinical workflows and processes
+      - Healthcare quality metrics
+      - Value-based care concepts
+      - Population health management
+      - Clinical coding (ICD-10, CPT, DRG)
+      - Healthcare reimbursement models
+
+  technical_skills:
+    priority: high
+    skills:
+      - SQL (healthcare databases)
+      - Python/R (statistical analysis)
+      - Tableau/PowerBI (healthcare dashboards)
+      - Excel (advanced analytics)
+      - SAS/SPSS
+      - Machine learning (predictive modeling)
+      - ETL processes
+      - Data warehousing
+
+  healthcare_systems:
+    priority: high
+    skills:
+      - Epic (EHR system)
+      - Cerner (EHR system)
+      - Meditech
+      - AllScripts
+      - Healthcare data warehouses
+      - Claims processing systems
+      - Clinical data repositories
+
+  data_standards:
+    priority: medium
+    skills:
+      - HL7/FHIR
+      - OMOP Common Data Model
+      - ICD-10, CPT, SNOMED coding
+      - CMS quality measures
+      - HEDIS measures
+
+  analytical_methods:
+    priority: high
+    skills:
+      - Descriptive analytics
+      - Predictive modeling
+      - Statistical analysis
+      - Risk stratification
+      - Cohort analysis
+      - Trend analysis
+      - A/B testing
+      - Cost-effectiveness analysis
+
+  soft_skills:
+    priority: medium
+    skills:
+      - Healthcare stakeholder communication
+      - Translating clinical needs to analytics
+      - Data storytelling for non-technical audiences
+      - Cross-functional collaboration
+      - Project management
+      - Regulatory compliance awareness
+
+# Keywords for ATS optimization
+keyword_optimization:
+  # High-priority keywords that should appear in tailored resumes
+  priority_keywords:
+    - healthcare analytics
+    - clinical data analysis
+    - population health
+    - value-based care
+    - patient outcomes
+    - quality improvement
+    - healthcare reporting
+    - claims data analysis
+    - EHR data analysis
+    - healthcare metrics
+    - utilization analysis
+    - cost analysis
+    - risk stratification
+    - predictive modeling
+    - healthcare dashboards
+
+  # Action verbs specific to healthcare analytics
+  action_verbs:
+    - Analyzed clinical data
+    - Improved patient outcomes
+    - Reduced healthcare costs
+    - Identified care gaps
+    - Optimized quality metrics
+    - Developed predictive models
+    - Streamlined reporting processes
+    - Enhanced population health strategies
+    - Supported value-based care initiatives
+    - Monitored regulatory compliance
+
+  # Metrics that resonate in healthcare
+  impactful_metrics:
+    - "Reduced readmission rates by X%"
+    - "Improved quality scores by X points"
+    - "Identified $X in cost savings"
+    - "Analyzed X million patient records"
+    - "Reduced length of stay by X days"
+    - "Improved HEDIS scores by X%"
+    - "Increased care gap closure by X%"
+    - "Processed X claims per month"
+
+# Certifications valued in healthcare analytics
+certifications:
+  highly_valued:
+    - RHIA: "Registered Health Information Administrator"
+    - RHIT: "Registered Health Information Technician"
+    - CCA: "Certified Coding Associate"
+    - CHDA: "Certified Health Data Analyst"
+    - PMP: "Project Management Professional"
+
+  nice_to_have:
+    - CAHIMS: "Certified Associate in Healthcare Information and Management Systems"
+    - CCS: "Certified Coding Specialist"
+    - Epic Certifications: "Various Epic system certifications"
+    - Tableau Desktop Specialist: "Data visualization certification"
+
+# Common role titles to recognize
+role_titles:
+  primary:
+    - Healthcare Data Analyst
+    - Clinical Data Analyst
+    - Health Informatics Analyst
+    - Healthcare Business Intelligence Analyst
+    - Population Health Analyst
+
+  related:
+    - Healthcare Data Scientist
+    - Clinical Informatics Specialist
+    - Healthcare Analytics Consultant
+    - Value-Based Care Analyst
+    - Quality Analytics Analyst
+    - Revenue Cycle Analyst
+    - Healthcare Reporting Analyst
+
+# Industry-specific resume tips
+resume_tips:
+  summary:
+    - Emphasize HIPAA compliance and PHI handling experience
+    - Mention specific EHR systems (Epic, Cerner) if experienced
+    - Highlight impact on patient outcomes or quality metrics
+    - Reference value-based care or population health experience
+
+  experience:
+    - Use healthcare-specific metrics (readmissions, LOS, quality scores)
+    - Mention clinical departments or specialties worked with
+    - Highlight regulatory compliance achievements
+    - Show cross-functional collaboration with clinical staff
+
+  skills:
+    - List specific EHR systems prominently
+    - Include both clinical knowledge AND technical skills
+    - Mention healthcare data standards (HL7, FHIR, OMOP)
+    - Show awareness of current healthcare trends (VBC, population health)

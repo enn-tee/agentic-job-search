@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# MacOS
+.DS_Store
+
+# Resume pool (sensitive data)
+resume_pool/base_resumes/*.json
+resume_pool/tailored_resumes/*.json
+resume_pool/metadata/*.json
+resume_pool/job_postings/*.json
+
+# Keep example files
+!resume_pool/**/.gitkeep
+!resume_pool/**/example_*.json
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

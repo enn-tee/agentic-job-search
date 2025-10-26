@@ -1,0 +1,64 @@
+Senior Healthcare Data Analyst
+
+Company: MedTech Solutions
+Location: Remote (US)
+Type: Full-time
+
+About Us:
+MedTech Solutions is a leading healthcare analytics company helping hospitals and health systems improve patient outcomes through data-driven insights. We work with over 200 healthcare organizations nationwide.
+
+Job Description:
+We are seeking an experienced Healthcare Data Analyst to join our growing team. You will work directly with clinical and operational stakeholders to transform complex healthcare data into actionable insights that drive quality improvement and cost reduction initiatives.
+
+Responsibilities:
+• Analyze clinical, operational, and financial data from multiple sources including EHR systems, claims data, and patient registries
+• Develop and maintain automated reporting dashboards and visualizations for executive leadership and clinical teams
+• Build predictive models to identify high-risk patients and support population health management initiatives
+• Collaborate with clinical staff to understand business requirements and translate them into technical solutions
+• Support value-based care contracts by tracking quality metrics, utilization patterns, and cost trends
+• Ensure data accuracy, integrity, and HIPAA compliance across all analytics activities
+• Present findings and recommendations to both technical and non-technical audiences
+• Mentor junior analysts and contribute to best practices for healthcare analytics
+
+Required Qualifications:
+• Bachelor's degree in Health Informatics, Public Health, Statistics, Computer Science, or related field
+• 5+ years of experience in healthcare data analysis or health informatics
+• Expert-level SQL skills for complex data extraction and transformation
+• Proficiency with Python or R for statistical analysis and data manipulation
+• Experience with healthcare data visualization tools (Tableau, Power BI, or similar)
+• Strong understanding of healthcare data standards (HL7, FHIR, OMOP)
+• Knowledge of clinical workflows, quality measures (HEDIS, CMS Stars), and value-based care models
+• Experience working with EHR systems (Epic, Cerner, or similar)
+• Understanding of HIPAA regulations and healthcare privacy requirements
+• Excellent communication skills and ability to work with clinical stakeholders
+
+Preferred Qualifications:
+• Master's degree in Health Informatics, Public Health, or related field
+• CHDA (Certified Health Data Analyst) certification
+• Experience with Epic Cogito or Slicer Dicer
+• Knowledge of risk stratification methodologies
+• Experience with machine learning applications in healthcare
+• Familiarity with claims data analysis and ACO performance reporting
+• Background in population health management or chronic disease management programs
+
+Technical Skills:
+• SQL (required)
+• Python or R (required)
+• Tableau or Power BI (required)
+• Epic, Cerner, or other major EHR systems
+• Statistical analysis and predictive modeling
+• ETL processes and data warehousing concepts
+• Git/version control (preferred)
+
+Benefits:
+• Competitive salary ($95,000 - $130,000 based on experience)
+• Comprehensive health, dental, and vision insurance
+• 401(k) with company match
+• Professional development budget
+• Flexible work arrangements
+• Generous PTO policy
+
+To Apply:
+Please submit your resume and cover letter detailing your healthcare analytics experience.
+
+Equal Opportunity Employer

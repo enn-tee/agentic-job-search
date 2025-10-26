@@ -1,0 +1,131 @@
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@email.com",
+  "phone": "(555) 123-4567",
+  "location": "Boston, MA",
+  "linkedin": "linkedin.com/in/janedoe",
+  "github": null,
+  "portfolio": null,
+  "professional_summary": "Results-driven healthcare data analyst with 5+ years of experience transforming clinical and operational data into actionable insights. Expertise in SQL, Python, and healthcare analytics platforms including Epic and Tableau. Proven track record of improving patient outcomes and reducing costs through data-driven decision making.",
+  "experience": [
+    {
+      "company": "General Hospital",
+      "title": "Senior Healthcare Data Analyst",
+      "start_date": "2021-03",
+      "end_date": null,
+      "location": "Boston, MA",
+      "bullets": [
+        "Analyzed clinical data from Epic EHR system to identify trends in patient readmissions, resulting in 15% reduction in 30-day readmission rates",
+        "Developed automated reporting dashboards in Tableau tracking quality metrics (HEDIS, CMS Star Ratings) for 200,000+ patient population",
+        "Led cross-functional team to implement risk stratification model using Python, improving care gap identification by 25%",
+        "Collaborated with clinical staff to translate business requirements into technical specifications for population health initiatives",
+        "Created SQL queries to extract and transform data from multiple sources including claims, lab results, and pharmacy data"
+      ],
+      "technologies": [
+        "Epic",
+        "SQL",
+        "Python",
+        "Tableau",
+        "R"
+      ]
+    },
+    {
+      "company": "Healthcare Analytics Corp",
+      "title": "Healthcare Data Analyst",
+      "start_date": "2019-01",
+      "end_date": "2021-02",
+      "location": "Boston, MA",
+      "bullets": [
+        "Performed statistical analysis on claims data to support value-based care contracts covering 50,000 lives",
+        "Built predictive models to identify high-risk patients, achieving 80% accuracy in predicting future hospitalizations",
+        "Designed and maintained ETL processes to integrate data from multiple EHR systems into enterprise data warehouse",
+        "Generated monthly reports on utilization metrics, cost trends, and quality measures for ACO leadership",
+        "Ensured HIPAA compliance in all data handling and reporting activities"
+      ],
+      "technologies": [
+        "SQL Server",
+        "SAS",
+        "Excel",
+        "SSRS"
+      ]
+    },
+    {
+      "company": "City Medical Center",
+      "title": "Clinical Data Analyst",
+      "start_date": "2017-06",
+      "end_date": "2018-12",
+      "location": "Cambridge, MA",
+      "bullets": [
+        "Supported clinical quality improvement initiatives through data analysis and reporting",
+        "Maintained dashboards tracking core measure compliance and patient safety indicators",
+        "Assisted with regulatory reporting including Joint Commission and CMS quality measures",
+        "Validated data integrity across clinical systems"
+      ],
+      "technologies": [
+        "Cerner",
+        "Excel",
+        "Access"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Massachusetts",
+      "degree": "Master of Public Health",
+      "field_of_study": "Health Informatics",
+      "graduation_date": "2017-05",
+      "gpa": "3.8",
+      "honors": [
+        "Dean's List"
+      ]
+    },
+    {
+      "institution": "Boston University",
+      "degree": "Bachelor of Science",
+      "field_of_study": "Biology",
+      "graduation_date": "2015-05",
+      "gpa": null,
+      "honors": []
+    }
+  ],
+  "technical_skills": [
+    "SQL (MySQL, PostgreSQL, SQL Server)",
+    "Python (Pandas, NumPy, Scikit-learn)",
+    "R (Statistical Analysis)",
+    "Tableau",
+    "Power BI",
+    "Epic EHR System",
+    "Cerner",
+    "SAS",
+    "Excel (Advanced)",
+    "Healthcare Data Standards (HL7, FHIR)",
+    "Statistical Analysis",
+    "Predictive Modeling",
+    "Data Warehousing",
+    "ETL Processes"
+  ],
+  "soft_skills": [
+    "Healthcare Domain Knowledge",
+    "Cross-functional Collaboration",
+    "Stakeholder Communication",
+    "Project Management",
+    "Problem Solving"
+  ],
+  "tools": [
+    "Git",
+    "Jupyter Notebooks",
+    "SSRS",
+    "Visual Studio Code"
+  ],
+  "languages": [
+    "English (Native)",
+    "Spanish (Conversational)"
+  ],
+  "certifications": [
+    "Certified Health Data Analyst (CHDA)",
+    "Epic Cogito Certified",
+    "Tableau Desktop Specialist"
+  ],
+  "projects": [],
+  "publications": []
+}

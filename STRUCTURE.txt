@@ -1,0 +1,70 @@
+agentic-job-search/
+├── .env.example                     # Environment variables template
+├── .gitignore                       # Git ignore rules
+├── README.md                        # Main documentation
+├── QUICKSTART.md                    # Quick start guide
+├── PROJECT_SUMMARY.md               # Complete project overview
+├── main.py                          # CLI entry point ⭐
+├── requirements.txt                 # Python dependencies
+│
+├── config/
+│   └── industries/                  # Industry configurations
+│       ├── healthcare.yaml          # Healthcare config (comprehensive) ⭐
+│       └── tech.yaml                # Tech config
+│
+├── src/
+│   ├── __init__.py
+│   │
+│   ├── agents/                      # AI Agents (Claude-powered)
+│   │   ├── __init__.py
+│   │   ├── base.py                  # BaseAgent with Claude integration
+│   │   ├── job_analyzer.py          # Job posting analyzer ⭐
+│   │   ├── resume_matcher.py        # Resume matcher & scorer
+│   │   ├── tailoring_orchestrator.py # Resume tailoring orchestrator ⭐
+│   │   └── quality_reviewer.py      # Quality reviewer (hiring manager POV)
+│   │
+│   ├── core/                        # Core abstractions
+│   │   ├── __init__.py
+│   │   ├── adapters.py              # Industry adapters (plugin system) ⭐
+│   │   └── services.py              # Service interfaces
+│   │
+│   ├── models/                      # Data models
+│   │   ├── __init__.py
+│   │   ├── job_posting.py           # JobPosting, JobAnalysis
+│   │   ├── resume.py                # Resume, ResumeMetadata, ResumeDiff
+│   │   └── industry.py              # IndustryConfig ⭐
+│   │
+│   ├── services/                    # Service implementations
+│   │   ├── __init__.py
+│   │   ├── terminology.py           # Terminology lookup service
+│   │   ├── keywords.py              # Keyword optimization service
+│   │   └── skills.py                # Skill taxonomy service
+│   │
+│   └── utils/
+│       └── __init__.py
+│
+├── resume_pool/                     # Resume storage
+│   ├── base_resumes/
+│   │   ├── .gitkeep
+│   │   └── example_resume.json      # Example healthcare resume ⭐
+│   ├── tailored_resumes/
+│   │   └── .gitkeep                 # Generated resumes saved here
+│   ├── metadata/
+│   │   └── .gitkeep                 # Resume metadata saved here
+│   └── job_postings/
+│       └── .gitkeep                 # Archived job postings
+│
+├── examples/
+│   └── sample_job_posting.txt       # Sample healthcare job posting ⭐
+│
+└── tests/
+    ├── __init__.py
+    ├── test_setup.py                # Setup verification tests
+    ├── unit/
+    │   └── __init__.py
+    └── integration/
+        └── __init__.py
+
+⭐ = Key files to review first
+
+Total: 33+ files

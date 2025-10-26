@@ -1,0 +1,84 @@
+industry: tech
+display_name: "Technology & Software"
+description: "Software engineering, data engineering, and technical positions"
+
+mcp_servers:
+  enabled: false
+  servers:
+    - name: google-jobs
+      package: "server-google-jobs"
+      description: "Google Jobs search via SerpAPI"
+      use_case: "Automated job aggregation"
+      priority: recommended
+      config:
+        search_terms:
+          - "software engineer"
+          - "data engineer"
+          - "full stack developer"
+          - "backend engineer"
+
+job_boards:
+  - name: "LinkedIn Tech"
+    url: "https://www.linkedin.com"
+    filters:
+      industry: "technology"
+
+  - name: "AngelList"
+    url: "https://angel.co/jobs"
+    type: "specialized"
+    description: "Startup jobs"
+
+  - name: "Stack Overflow Jobs"
+    url: "https://stackoverflow.com/jobs"
+    type: "specialized"
+
+terminology:
+  acronyms:
+    API: "Application Programming Interface"
+    CI/CD: "Continuous Integration/Continuous Deployment"
+    AWS: "Amazon Web Services"
+    GCP: "Google Cloud Platform"
+    REST: "Representational State Transfer"
+    SaaS: "Software as a Service"
+    OOP: "Object-Oriented Programming"
+    TDD: "Test-Driven Development"
+
+skill_categories:
+  languages:
+    priority: high
+    skills: [Python, Java, Go, JavaScript, TypeScript, Rust]
+
+  frameworks:
+    priority: high
+    skills: [React, Django, Spring Boot, Node.js, FastAPI]
+
+  cloud:
+    priority: high
+    skills: [AWS, GCP, Azure, Kubernetes, Docker]
+
+  databases:
+    priority: medium
+    skills: [PostgreSQL, MongoDB, Redis, MySQL]
+
+keyword_optimization:
+  priority_keywords:
+    - software development
+    - scalable systems
+    - microservices
+    - cloud native
+    - agile development
+    - REST APIs
+    - full stack
+
+  action_verbs:
+    - Engineered
+    - Architected
+    - Optimized
+    - Deployed
+    - Scaled
+
+certifications:
+  highly_valued:
+    - AWS Certified Solutions Architect
+    - Google Cloud Professional
+    - Certified Kubernetes Administrator
